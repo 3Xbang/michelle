@@ -1,0 +1,236 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "create": "新建",
+    "edit": "编辑",
+    "delete": "删除",
+    "confirm": "确认",
+    "search": "搜索",
+    "filter": "筛选",
+    "reset": "重置",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "actions": "操作",
+    "back": "返回",
+    "export": "导出",
+    "submit": "提交",
+    "close": "关闭",
+    "yes": "是",
+    "no": "否",
+    "all": "全部",
+    "status": "状态",
+    "type": "类型",
+    "name": "名称",
+    "description": "描述",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "nav": {
+    "calendar": "房态日历",
+    "bookings": "订单管理",
+    "tickets": "工单管理",
+    "rooms": "房源管理",
+    "reports": "财务报表",
+    "config": "系统配置",
+    "users": "用户管理",
+    "profile": "个人中心",
+    "logout": "退出登录"
+  },
+  "auth": {
+    "login": "登录",
+    "email": "邮箱",
+    "password": "密码",
+    "loginTitle": "Villa PMS 登录",
+    "loginButton": "登录",
+    "loginFailed": "登录失败，请检查邮箱和密码",
+    "logoutSuccess": "已退出登录"
+  },
+  "calendar": {
+    "title": "房态日历",
+    "prevMonth": "上一月",
+    "nextMonth": "下一月",
+    "today": "今天",
+    "viewDetail": "查看详情",
+    "guest": "客人",
+    "platform": "平台",
+    "maintenance": "维护中"
+  },
+  "booking": {
+    "title": "订单管理",
+    "createTitle": "新建订单",
+    "editTitle": "编辑订单",
+    "guestName": "客人姓名",
+    "room": "房源",
+    "checkIn": "入住日期",
+    "checkOut": "退房日期",
+    "rentalType": "租期类型",
+    "platformSource": "平台来源",
+    "totalRevenue": "总收入",
+    "commission": "佣金",
+    "netIncome": "净收入",
+    "bookingStatus": "订单状态",
+    "createdBy": "创建人",
+    "dateConflict": "日期与已有订单冲突",
+    "invalidTransition": "无效的状态变更"
+  },
+  "ticket": {
+    "title": "工单管理",
+    "createTitle": "新建工单",
+    "detailTitle": "工单详情",
+    "issueType": "问题类型",
+    "priority": "优先级",
+    "photos": "照片",
+    "uploadPhotos": "上传照片",
+    "markComplete": "标记完成",
+    "completedAt": "完成时间"
+  },
+  "room": {
+    "title": "房源管理",
+    "editTitle": "编辑房源",
+    "nameCn": "中文名称",
+    "nameEn": "英文名称",
+    "roomType": "房源类型",
+    "baseDailyRate": "日基础房价",
+    "roomStatus": "房源状态"
+  },
+  "report": {
+    "title": "财务报表",
+    "byRoom": "按房源",
+    "byRentalType": "按租期类型",
+    "byPlatform": "按平台来源",
+    "byMonth": "按月份",
+    "totalRevenue": "总收入",
+    "totalCommission": "总佣金",
+    "totalNetIncome": "总净收入",
+    "exportCsv": "导出 CSV",
+    "granularity": "时间粒度",
+    "weekly": "按周",
+    "monthly": "按月",
+    "dateRange": "日期范围",
+    "from": "开始日期",
+    "to": "结束日期",
+    "summary": "汇总"
+  },
+  "config": {
+    "title": "系统配置",
+    "configKey": "配置键",
+    "configValue": "配置值",
+    "featureSwitch": "功能开关",
+    "addConfig": "新增配置",
+    "duplicateKey": "配置键已存在"
+  },
+  "user": {
+    "title": "用户管理",
+    "createTitle": "新建用户",
+    "editTitle": "编辑用户",
+    "userName": "姓名",
+    "email": "邮箱",
+    "role": "角色",
+    "phone": "手机号",
+    "preferredLang": "语言偏好",
+    "password": "密码",
+    "newPassword": "新密码",
+    "oldPassword": "旧密码",
+    "confirmPassword": "确认密码"
+  },
+  "profile": {
+    "title": "个人中心",
+    "changePassword": "修改密码",
+    "updateInfo": "更新信息",
+    "passwordChanged": "密码修改成功",
+    "infoUpdated": "信息更新成功",
+    "oldPasswordWrong": "旧密码不正确"
+  },
+  "enum": {
+    "bookingStatus": {
+      "pending": "待入住",
+      "checked_in": "已入住",
+      "checked_out": "已退房"
+    },
+    "rentalType": {
+      "daily": "日租",
+      "monthly": "月租",
+      "yearly": "年租"
+    },
+    "platform": {
+      "Airbnb": "Airbnb",
+      "Agoda": "Agoda",
+      "Booking.com": "Booking.com",
+      "Trip.com": "Trip.com/携程",
+      "途家": "途家",
+      "小猪": "小猪",
+      "美团民宿": "美团民宿",
+      "飞猪": "飞猪",
+      "Expedia": "Expedia",
+      "VRBO": "VRBO",
+      "直客": "直客",
+      "其他": "其他"
+    },
+    "ticketStatus": {
+      "pending": "待处理",
+      "completed": "已完成"
+    },
+    "issueType": {
+      "plumbing": "水管",
+      "furniture": "家具",
+      "cleaning": "清洁",
+      "network": "网络",
+      "other": "其他"
+    },
+    "priority": {
+      "urgent": "紧急",
+      "normal": "普通"
+    },
+    "roomType": {
+      "villa": "别墅",
+      "homestay": "民宿",
+      "apartment": "公寓"
+    },
+    "roomStatus": {
+      "active": "正常",
+      "maintenance": "维护中"
+    },
+    "userRole": {
+      "Admin": "管理员",
+      "Staff": "员工"
+    },
+    "lang": {
+      "CN": "中文",
+      "EN": "English"
+    }
+  },
+  "validation": {
+    "required": "此字段为必填项",
+    "invalidEmail": "邮箱格式无效",
+    "checkOutAfterCheckIn": "退房日期必须晚于入住日期",
+    "nonNegative": "不能为负数",
+    "positiveNumber": "必须为正数",
+    "passwordMismatch": "两次密码不一致",
+    "minLength": "最少 {min} 个字符"
+  },
+  "error": {
+    "networkFailure": "网络连接失败，请检查网络",
+    "unknown": "发生未知错误",
+    "unauthorized": "登录已过期，请重新登录",
+    "forbidden": "无权限访问",
+    "notFound": "资源不存在",
+    "serverError": "服务器错误，请稍后重试"
+  },
+  "pagination": {
+    "total": "共 {total} 条",
+    "pageSize": "每页 {size} 条",
+    "page": "第 {page} 页"
+  },
+  "confirm": {
+    "deleteTitle": "确认删除",
+    "deleteMessage": "确定要删除吗？此操作不可撤销。",
+    "logoutTitle": "确认退出",
+    "logoutMessage": "确定要退出登录吗？"
+  },
+  "notFound": {
+    "title": "404",
+    "message": "页面不存在",
+    "backHome": "返回首页"
+  }
+}

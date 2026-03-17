@@ -1,0 +1,236 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "loading": "Loading...",
+    "noData": "No data",
+    "actions": "Actions",
+    "back": "Back",
+    "export": "Export",
+    "submit": "Submit",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "status": "Status",
+    "type": "Type",
+    "name": "Name",
+    "description": "Description",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At"
+  },
+  "nav": {
+    "calendar": "Calendar",
+    "bookings": "Bookings",
+    "tickets": "Tickets",
+    "rooms": "Rooms",
+    "reports": "Reports",
+    "config": "Configuration",
+    "users": "Users",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "loginTitle": "Villa PMS Login",
+    "loginButton": "Login",
+    "loginFailed": "Login failed. Please check your email and password.",
+    "logoutSuccess": "Logged out successfully"
+  },
+  "calendar": {
+    "title": "Room Calendar",
+    "prevMonth": "Previous Month",
+    "nextMonth": "Next Month",
+    "today": "Today",
+    "viewDetail": "View Details",
+    "guest": "Guest",
+    "platform": "Platform",
+    "maintenance": "Under Maintenance"
+  },
+  "booking": {
+    "title": "Bookings",
+    "createTitle": "Create Booking",
+    "editTitle": "Edit Booking",
+    "guestName": "Guest Name",
+    "room": "Room",
+    "checkIn": "Check-in Date",
+    "checkOut": "Check-out Date",
+    "rentalType": "Rental Type",
+    "platformSource": "Platform Source",
+    "totalRevenue": "Total Revenue",
+    "commission": "Commission",
+    "netIncome": "Net Income",
+    "bookingStatus": "Booking Status",
+    "createdBy": "Created By",
+    "dateConflict": "Dates conflict with an existing booking",
+    "invalidTransition": "Invalid status transition"
+  },
+  "ticket": {
+    "title": "Tickets",
+    "createTitle": "Create Ticket",
+    "detailTitle": "Ticket Details",
+    "issueType": "Issue Type",
+    "priority": "Priority",
+    "photos": "Photos",
+    "uploadPhotos": "Upload Photos",
+    "markComplete": "Mark Complete",
+    "completedAt": "Completed At"
+  },
+  "room": {
+    "title": "Rooms",
+    "editTitle": "Edit Room",
+    "nameCn": "Chinese Name",
+    "nameEn": "English Name",
+    "roomType": "Room Type",
+    "baseDailyRate": "Base Daily Rate",
+    "roomStatus": "Room Status"
+  },
+  "report": {
+    "title": "Reports",
+    "byRoom": "By Room",
+    "byRentalType": "By Rental Type",
+    "byPlatform": "By Platform",
+    "byMonth": "By Month",
+    "totalRevenue": "Total Revenue",
+    "totalCommission": "Total Commission",
+    "totalNetIncome": "Total Net Income",
+    "exportCsv": "Export CSV",
+    "granularity": "Granularity",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "dateRange": "Date Range",
+    "from": "From",
+    "to": "To",
+    "summary": "Summary"
+  },
+  "config": {
+    "title": "Configuration",
+    "configKey": "Config Key",
+    "configValue": "Config Value",
+    "featureSwitch": "Feature Switch",
+    "addConfig": "Add Config",
+    "duplicateKey": "Config key already exists"
+  },
+  "user": {
+    "title": "Users",
+    "createTitle": "Create User",
+    "editTitle": "Edit User",
+    "userName": "Name",
+    "email": "Email",
+    "role": "Role",
+    "phone": "Phone",
+    "preferredLang": "Language Preference",
+    "password": "Password",
+    "newPassword": "New Password",
+    "oldPassword": "Old Password",
+    "confirmPassword": "Confirm Password"
+  },
+  "profile": {
+    "title": "Profile",
+    "changePassword": "Change Password",
+    "updateInfo": "Update Info",
+    "passwordChanged": "Password changed successfully",
+    "infoUpdated": "Info updated successfully",
+    "oldPasswordWrong": "Old password is incorrect"
+  },
+  "enum": {
+    "bookingStatus": {
+      "pending": "Pending",
+      "checked_in": "Checked In",
+      "checked_out": "Checked Out"
+    },
+    "rentalType": {
+      "daily": "Daily",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "platform": {
+      "Airbnb": "Airbnb",
+      "Agoda": "Agoda",
+      "Booking.com": "Booking.com",
+      "Trip.com": "Trip.com",
+      "途家": "Tujia",
+      "小猪": "Xiaozhu",
+      "美团民宿": "Meituan B&B",
+      "飞猪": "Fliggy",
+      "Expedia": "Expedia",
+      "VRBO": "VRBO",
+      "直客": "Direct",
+      "其他": "Other"
+    },
+    "ticketStatus": {
+      "pending": "Pending",
+      "completed": "Completed"
+    },
+    "issueType": {
+      "plumbing": "Plumbing",
+      "furniture": "Furniture",
+      "cleaning": "Cleaning",
+      "network": "Network",
+      "other": "Other"
+    },
+    "priority": {
+      "urgent": "Urgent",
+      "normal": "Normal"
+    },
+    "roomType": {
+      "villa": "Villa",
+      "homestay": "Homestay",
+      "apartment": "Apartment"
+    },
+    "roomStatus": {
+      "active": "Active",
+      "maintenance": "Under Maintenance"
+    },
+    "userRole": {
+      "Admin": "Admin",
+      "Staff": "Staff"
+    },
+    "lang": {
+      "CN": "中文",
+      "EN": "English"
+    }
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email format",
+    "checkOutAfterCheckIn": "Check-out date must be after check-in date",
+    "nonNegative": "Must not be negative",
+    "positiveNumber": "Must be a positive number",
+    "passwordMismatch": "Passwords do not match",
+    "minLength": "Minimum {min} characters"
+  },
+  "error": {
+    "networkFailure": "Network connection failed. Please check your network.",
+    "unknown": "An unknown error occurred",
+    "unauthorized": "Session expired. Please log in again.",
+    "forbidden": "Access denied",
+    "notFound": "Resource not found",
+    "serverError": "Server error. Please try again later."
+  },
+  "pagination": {
+    "total": "{total} items total",
+    "pageSize": "{size} per page",
+    "page": "Page {page}"
+  },
+  "confirm": {
+    "deleteTitle": "Confirm Delete",
+    "deleteMessage": "Are you sure you want to delete? This action cannot be undone.",
+    "logoutTitle": "Confirm Logout",
+    "logoutMessage": "Are you sure you want to log out?"
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Page not found",
+    "backHome": "Back to Home"
+  }
+}
