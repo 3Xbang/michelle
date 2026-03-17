@@ -27,7 +27,7 @@ DB_USER="mira"
 DB_PASS="$(openssl rand -base64 24)"   # 自动生成随机密码
 
 JWT_SECRET="$(openssl rand -base64 32)"
-PORT=3001
+PORT=4000
 
 # 你的域名或 EC2 公网 IP（Nginx server_name 用）
 DOMAIN="_"  # 改成实际域名，如 mira.example.com

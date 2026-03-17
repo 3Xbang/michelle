@@ -9,7 +9,7 @@ module.exports = {
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001
+        PORT: 4000
       },
       error_file: '/var/log/mira/error.log',
       out_file: '/var/log/mira/output.log',
