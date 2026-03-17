@@ -2,12 +2,14 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  base: '/mira/',
   plugins: [vue()],
   server: {
     proxy: {
-      '/api': {
+      '/mira/api': {
         target: 'http://localhost:4000',
-        changeOrigin: true
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/mira/, '')
       }
     }
   },

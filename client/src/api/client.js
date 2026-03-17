@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: '/mira/api',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -31,8 +31,8 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       // Use window.location for redirect since we don't have router access here
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (window.location.pathname !== '/mira/login') {
+        window.location.href = '/mira/login';
       }
     }
 

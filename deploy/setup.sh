@@ -3,7 +3,8 @@
 # Mira (Villa PMS) - EC2 一键部署脚本
 #
 # 项目名: mira
-# 端口:   3001 (后端 API)
+# 端口:   4000 (后端 API，内部)
+# 访问:   http://100.51.160.4/mira/
 # 数据库: mira_db
 # PM2:    mira
 # 路径:   /var/www/mira
@@ -30,7 +31,7 @@ JWT_SECRET="$(openssl rand -base64 32)"
 PORT=4000
 
 # 你的域名或 EC2 公网 IP（Nginx server_name 用）
-DOMAIN="_"  # 改成实际域名，如 mira.example.com
+DOMAIN="100.51.160.4 ec2-100-51-160-4.compute-1.amazonaws.com"
 
 # ============================================================
 # 颜色输出
@@ -198,21 +199,44 @@ pm2 save
 pm2 startup systemd -u root --hp /root 2>/dev/null || true
 
 # ============================================================
-# 10. 配置 Nginx（独立 site 配置，不动其他项目的配置）
+# 10. 配置 Nginx（注入 location block 到现有配置，不创建独立 server）
 # ============================================================
 log "配置 Nginx..."
 
-# 替换域名
-sed -i "s/server_name mira.yourdomain.com;/server_name ${DOMAIN};/" "${APP_DIR}/deploy/nginx.conf"
+# 检查是否已经注入过 mira 配置
+NGINX_DEFAULT="/etc/nginx/sites-available/default"
+if grep -q "# Mira - 前端 SPA 静态文件" "${NGINX_DEFAULT}" 2>/dev/null; then
+  warn "Nginx 中已有 mira 配置，跳过注入"
+else
+  # 提取 location blocks（跳过注释头部）
+  MIRA_LOCATIONS=$(sed -n '/^# Mira - 前端/,$ p' "${APP_DIR}/deploy/nginx.conf" | sed '/^# ---- 粘贴结束/d')
 
-# 复制到 sites-available（独立文件名 mira）
-cp "${APP_DIR}/deploy/nginx.conf" /etc/nginx/sites-available/mira
+  # 在 server block 的最后一个 } 之前插入
+  # 先备份
+  cp "${NGINX_DEFAULT}" "${NGINX_DEFAULT}.bak.$(date +%Y%m%d%H%M%S)"
+  log "已备份原 Nginx 配置"
 
-# 启用站点
-ln -sf /etc/nginx/sites-available/mira /etc/nginx/sites-enabled/mira
+  # 用 sed 在最后一个 } 之前插入 mira location blocks
+  # 创建临时文件
+  TEMP_CONF=$(mktemp)
+  # 找到最后一个 } 的行号，在它之前插入
+  LAST_BRACE=$(grep -n "^}" "${NGINX_DEFAULT}" | tail -1 | cut -d: -f1)
+  if [ -n "${LAST_BRACE}" ]; then
+    head -n $((LAST_BRACE - 1)) "${NGINX_DEFAULT}" > "${TEMP_CONF}"
+    echo "" >> "${TEMP_CONF}"
+    echo "    ${MIRA_LOCATIONS}" >> "${TEMP_CONF}"
+    echo "" >> "${TEMP_CONF}"
+    tail -n +"${LAST_BRACE}" "${NGINX_DEFAULT}" >> "${TEMP_CONF}"
+    mv "${TEMP_CONF}" "${NGINX_DEFAULT}"
+  else
+    err "找不到 Nginx 配置中的 server block 结束符 }"
+  fi
+
+  log "已注入 mira location blocks 到 ${NGINX_DEFAULT}"
+fi
 
 # 检查 Nginx 配置
-nginx -t || err "Nginx 配置检查失败，请手动检查 /etc/nginx/sites-available/mira"
+nginx -t || err "Nginx 配置检查失败，请手动检查 ${NGINX_DEFAULT}"
 
 # 重载 Nginx
 systemctl reload nginx
@@ -247,7 +271,8 @@ echo "  项目路径:  ${APP_DIR}"
 echo "  后端端口:  ${PORT}"
 echo "  PM2 进程:  ${APP_NAME}"
 echo "  数据库:    ${DB_NAME} (用户: ${DB_USER})"
-echo "  Nginx:     /etc/nginx/sites-available/mira"
+echo "  Nginx:     注入到 /etc/nginx/sites-available/default"
+echo "  访问地址:  http://100.51.160.4/mira/"
 echo "  日志:      /var/log/mira/"
 echo "  备份:      /var/backups/mira/ (每天 2:00 AM)"
 echo ""
