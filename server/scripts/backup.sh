@@ -6,7 +6,7 @@
 #   ./backup.sh
 #
 # Cron example (daily at 2:00 AM):
-#   0 2 * * * /var/www/villa-pms/server/scripts/backup.sh >> /var/log/villa-pms/backup.log 2>&1
+#   0 2 * * * /var/www/mira/server/scripts/backup.sh >> /var/log/mira/backup.log 2>&1
 #
 # Environment variables (or .env file):
 #   DB_HOST     - PostgreSQL host (default: localhost)
@@ -32,13 +32,13 @@ fi
 # Configuration with defaults
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-villa_pms}"
-DB_USER="${DB_USER:-villa_pms}"
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/villa-pms}"
+DB_NAME="${DB_NAME:-mira_db}"
+DB_USER="${DB_USER:-mira}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/mira}"
 BACKUP_RETAIN_DAYS="${BACKUP_RETAIN_DAYS:-7}"
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-BACKUP_FILE="${BACKUP_DIR}/villa_pms_backup_${TIMESTAMP}.sql.gz"
+BACKUP_FILE="${BACKUP_DIR}/mira_backup_${TIMESTAMP}.sql.gz"
 
 # Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
@@ -55,7 +55,7 @@ else
 fi
 
 # Remove backups older than retention period
-DELETED=$(find "$BACKUP_DIR" -name "villa_pms_backup_*.sql.gz" -type f -mtime +"$BACKUP_RETAIN_DAYS" -print -delete | wc -l)
+DELETED=$(find "$BACKUP_DIR" -name "mira_backup_*.sql.gz" -type f -mtime +"$BACKUP_RETAIN_DAYS" -print -delete | wc -l)
 if [ "$DELETED" -gt 0 ]; then
   echo "[$(date --iso-8601=seconds)] Cleaned up ${DELETED} backup(s) older than ${BACKUP_RETAIN_DAYS} days"
 fi

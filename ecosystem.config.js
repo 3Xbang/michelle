@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'villa-pms',
+      name: 'mira',
       script: 'server/src/index.js',
       instances: 1,
       exec_mode: 'fork',
@@ -9,10 +9,10 @@ module.exports = {
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3001
       },
-      error_file: '/var/log/villa-pms/error.log',
-      out_file: '/var/log/villa-pms/output.log',
+      error_file: '/var/log/mira/error.log',
+      out_file: '/var/log/mira/output.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       restart_delay: 5000,
       max_restarts: 10
