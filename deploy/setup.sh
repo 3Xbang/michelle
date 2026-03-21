@@ -20,7 +20,7 @@ set -euo pipefail
 # ============================================================
 APP_NAME="mira"
 APP_DIR="/var/www/mira"
-REPO_URL="https://github.com/3Xbang/mira.git"
+REPO_URL="https://github.com/3Xbang/michelle.git"
 BRANCH="main"
 
 DB_NAME="mira_db"
