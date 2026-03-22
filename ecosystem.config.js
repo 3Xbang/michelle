@@ -2,7 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'mira',
-      script: 'server/src/index.js',
+      script: '/var/www/mira/server/src/index.js',
+      cwd: '/var/www/mira/server',
       instances: 1,
       exec_mode: 'fork',
       watch: false,
