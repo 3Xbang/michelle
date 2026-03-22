@@ -4,56 +4,156 @@
       <h1 class="page-title">{{ t('room.title') }}</h1>
     </div>
 
+    <!-- Mobile Filter / Desktop Filter Bar -->
+    <MobileFilter
+      :filters="filters"
+      :filter-fields="filterFields"
+      :active-count="activeFilterCount"
+      @apply="handleFilterApply"
+      @reset="handleReset"
+    />
+
     <div class="card">
-      <div v-if="store.loading" class="table-loading">{{ t('common.loading') }}</div>
-      <div v-else-if="store.rooms.length === 0" class="table-empty">{{ t('common.noData') }}</div>
-      <div v-else class="table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{{ t('room.nameCn') }}</th>
-              <th>{{ t('room.nameEn') }}</th>
-              <th>{{ t('room.roomType') }}</th>
-              <th>{{ t('room.baseDailyRate') }}</th>
-              <th>{{ t('room.roomStatus') }}</th>
-              <th>{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="room in store.rooms" :key="room.id">
-              <td>{{ room.room_name_cn }}</td>
-              <td>{{ room.room_name_en }}</td>
-              <td>{{ t('enum.roomType.' + room.room_type) }}</td>
-              <td>{{ formatNumber(room.base_daily_rate) }}</td>
-              <td>
-                <span class="status-badge" :class="'status-' + room.status">
-                  {{ t('enum.roomStatus.' + room.status) }}
-                </span>
-              </td>
-              <td>
-                <router-link :to="`/rooms/${room.id}`" class="btn btn-outline btn-sm">
-                  {{ t('common.edit') }}
-                </router-link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <PullToRefresh :loading="store.loading" @refresh="handlePullRefresh">
+        <DataTable
+          :columns="columns"
+          :data="filteredRooms"
+          :loading="store.loading"
+          :card-mode="!isDesktop"
+          card-title-key="room_name_cn"
+          card-subtitle-key="room_type_label"
+          card-status-key="status"
+          :card-link-fn="cardLinkFn"
+        >
+          <template #cell-room_name_cn="{ row }">
+            <router-link :to="`/rooms/${row.id}`" class="link">{{ row.room_name_cn }}</router-link>
+          </template>
+          <template #cell-room_type="{ row }">
+            {{ t('enum.roomType.' + row.room_type) }}
+          </template>
+          <template #cell-base_daily_rate="{ row }">
+            {{ formatNumber(row.base_daily_rate) }}
+          </template>
+          <template #cell-status="{ row }">
+            <span class="status-badge" :class="'status-' + row.status">
+              <SvgIcon :name="statusIcon(row.status)" :size="14" />
+              {{ t('enum.roomStatus.' + row.status) }}
+            </span>
+          </template>
+        </DataTable>
+      </PullToRefresh>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { computed, onMounted, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoomStore } from '../stores/room.js';
+import { useMediaQuery } from '../composables/useMediaQuery.js';
+import DataTable from '../components/common/DataTable.vue';
+import MobileFilter from '../components/common/MobileFilter.vue';
+import PullToRefresh from '../components/common/PullToRefresh.vue';
+import SvgIcon from '../components/icons/SvgIcon.vue';
 
 const { t } = useI18n();
 const store = useRoomStore();
+const isDesktop = useMediaQuery('(min-width: 768px)');
+
+const filters = reactive({
+  room_type: '',
+  status: '',
+});
+
+const columns = computed(() => [
+  { key: 'room_name_cn', label: t('room.nameCn') },
+  { key: 'room_name_en', label: t('room.nameEn') },
+  { key: 'room_type', label: t('room.roomType') },
+  { key: 'base_daily_rate', label: t('room.baseDailyRate') },
+  { key: 'status', label: t('room.roomStatus') },
+]);
+
+const filterFields = computed(() => [
+  {
+    key: 'room_type',
+    label: t('room.roomType'),
+    type: 'select',
+    options: [
+      { value: 'villa', label: t('enum.roomType.villa') },
+      { value: 'homestay', label: t('enum.roomType.homestay') },
+      { value: 'apartment', label: t('enum.roomType.apartment') },
+    ]
+  },
+  {
+    key: 'status',
+    label: t('room.roomStatus'),
+    type: 'select',
+    options: [
+      { value: 'active', label: t('enum.roomStatus.active') },
+      { value: 'maintenance', label: t('enum.roomStatus.maintenance') },
+    ]
+  }
+]);
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (filters.room_type) count++;
+  if (filters.status) count++;
+  return count;
+});
+
+// Client-side filtering since rooms is a small list
+const filteredRooms = computed(() => {
+  let result = store.rooms;
+  if (filters.room_type) {
+    result = result.filter(r => r.room_type === filters.room_type);
+  }
+  if (filters.status) {
+    result = result.filter(r => r.status === filters.status);
+  }
+  // Add translated room_type_label for card subtitle
+  return result.map(r => ({
+    ...r,
+    room_type_label: t('enum.roomType.' + r.room_type)
+  }));
+});
+
+const STATUS_ICON_MAP = {
+  pending: 'clock',
+  checked_in: 'check',
+  completed: 'check',
+  checked_out: 'close',
+  urgent: 'warning',
+  active: 'check',
+  maintenance: 'warning',
+};
+
+function statusIcon(status) {
+  return STATUS_ICON_MAP[status] || 'clock';
+}
+
+function cardLinkFn(row) {
+  return `/rooms/${row.id}`;
+}
 
 function formatNumber(val) {
   if (val == null) return '-';
   return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function handleFilterApply(newFilters) {
+  Object.assign(filters, newFilters);
+}
+
+function handleReset() {
+  filters.room_type = '';
+  filters.status = '';
+}
+
+function handlePullRefresh() {
+  filters.room_type = '';
+  filters.status = '';
+  store.fetchRooms();
 }
 
 onMounted(() => {
@@ -73,57 +173,11 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
-.table-loading,
-.table-empty {
-  text-align: center;
-  padding: 2rem 0.75rem;
-  color: #6b7280;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.data-table th,
-.data-table td {
-  padding: 0.625rem 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.data-table th {
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-  white-space: nowrap;
-}
-
-.data-table tbody tr:hover {
-  background: #f9fafb;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+.link {
+  color: #2563eb;
   font-weight: 500;
 }
-
-.status-active {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.status-maintenance {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
+.link:hover {
+  text-decoration: underline;
 }
 </style>

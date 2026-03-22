@@ -155,13 +155,29 @@ async function handleChangePassword() {
 
 <style scoped>
 .profile-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--spacing-lg);
 }
 
 .section-title {
-  font-size: 1.125rem;
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  margin-bottom: 1rem;
-  color: #374151;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+/* Mobile: single-column layout, full-width fields */
+@media (max-width: 639px) {
+  .profile-section {
+    padding: var(--spacing-md);
+  }
+
+  .profile-section :deep(.form-field) {
+    width: 100%;
+  }
+
+  .profile-section .btn {
+    width: 100%;
+    min-height: var(--touch-target-nav);
+  }
 }
 </style>

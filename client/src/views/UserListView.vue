@@ -2,39 +2,42 @@
   <div>
     <div class="page-header">
       <h1 class="page-title">{{ t('user.title') }}</h1>
-      <button class="btn btn-primary" @click="openForm(null)">{{ t('user.createTitle') }}</button>
+      <button v-if="isDesktop" class="btn btn-primary btn-icon" @click="openForm(null)">
+        <SvgIcon name="plus" :size="18" />
+        {{ t('user.createTitle') }}
+      </button>
     </div>
 
     <!-- User List -->
     <div class="card">
-      <div v-if="loading" class="table-loading">{{ t('common.loading') }}</div>
-      <div v-else-if="users.length === 0" class="table-empty">{{ t('common.noData') }}</div>
-      <div v-else class="table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{{ t('user.userName') }}</th>
-              <th>{{ t('user.email') }}</th>
-              <th>{{ t('user.role') }}</th>
-              <th>{{ t('user.phone') }}</th>
-              <th>{{ t('user.preferredLang') }}</th>
-              <th>{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="u in users" :key="u.id">
-              <td>{{ u.name }}</td>
-              <td>{{ u.email }}</td>
-              <td>{{ t('enum.userRole.' + u.role) }}</td>
-              <td>{{ u.phone || '-' }}</td>
-              <td>{{ t('enum.lang.' + u.preferred_lang) }}</td>
-              <td>
-                <button class="btn btn-outline btn-sm" @click="openForm(u)">{{ t('common.edit') }}</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <PullToRefresh :loading="loading" @refresh="handlePullRefresh">
+        <DataTable
+          :columns="columns"
+          :data="users"
+          :loading="loading"
+          :card-mode="!isDesktop"
+          card-title-key="name"
+          card-subtitle-key="email"
+          card-status-key="role"
+        >
+          <template #cell-name="{ row }">
+            {{ row.name }}
+          </template>
+          <template #cell-role="{ row }">
+            <span class="status-badge" :class="'status-' + row.role">
+              {{ t('enum.userRole.' + row.role) }}
+            </span>
+          </template>
+        </DataTable>
+      </PullToRefresh>
+    </div>
+
+    <!-- Mobile: create user button at bottom of list -->
+    <div v-if="!isDesktop" class="mobile-create-bar">
+      <button class="btn btn-primary mobile-create-btn btn-icon" @click="openForm(null)">
+        <SvgIcon name="plus" :size="18" />
+        {{ t('user.createTitle') }}
+      </button>
     </div>
 
     <!-- Create/Edit Form Modal -->
@@ -76,7 +79,8 @@
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary" :disabled="submitting">
+            <button type="submit" class="btn btn-primary btn-icon" :disabled="submitting">
+              <SvgIcon name="save" :size="18" />
               {{ submitting ? t('common.loading') : t('common.save') }}
             </button>
             <button type="button" class="btn btn-outline" @click="closeForm">{{ t('common.cancel') }}</button>
@@ -91,12 +95,17 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '../composables/useToast.js';
+import { useMediaQuery } from '../composables/useMediaQuery.js';
 import { useValidation, required as requiredRule } from '../composables/useValidation.js';
 import apiClient from '../api/client.js';
 import FormField from '../components/common/FormField.vue';
+import DataTable from '../components/common/DataTable.vue';
+import PullToRefresh from '../components/common/PullToRefresh.vue';
+import SvgIcon from '../components/icons/SvgIcon.vue';
 
 const { t } = useI18n();
 const toast = useToast();
+const isDesktop = useMediaQuery('(min-width: 768px)');
 
 const users = ref([]);
 const loading = ref(false);
@@ -112,6 +121,14 @@ const form = reactive({
   phone: '',
   password: '',
 });
+
+const columns = computed(() => [
+  { key: 'name', label: t('user.userName') },
+  { key: 'email', label: t('user.email') },
+  { key: 'role', label: t('user.role') },
+  { key: 'phone', label: t('user.phone') },
+  { key: 'preferred_lang', label: t('user.preferredLang') },
+]);
 
 const validationRules = computed(() => {
   const rules = {
@@ -133,7 +150,6 @@ const { errors, validateField, validateAll, clearErrors } = useValidation({
 });
 
 function validate(field) {
-  // Skip password validation when editing
   if (field === 'password' && editingUser.value) return;
   validateField(field, form[field]);
 }
@@ -177,8 +193,11 @@ async function fetchUsers() {
   }
 }
 
+function handlePullRefresh() {
+  fetchUsers();
+}
+
 async function handleSubmit() {
-  // Validate required fields
   let valid = true;
   for (const field of ['name', 'email', 'role']) {
     if (!validateField(field, form[field])) valid = false;
@@ -232,40 +251,12 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
-.table-loading,
-.table-empty {
-  text-align: center;
-  padding: 2rem 0.75rem;
-  color: #6b7280;
+.mobile-create-bar {
+  margin-top: var(--spacing-md);
 }
 
-.data-table {
+.mobile-create-btn {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.data-table th,
-.data-table td {
-  padding: 0.625rem 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.data-table th {
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-  white-space: nowrap;
-}
-
-.data-table tbody tr:hover {
-  background: #f9fafb;
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
 }
 
 /* Modal */

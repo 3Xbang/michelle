@@ -8,6 +8,7 @@
           :class="['toast', `toast-${toast.type}`]"
           role="alert"
         >
+          <SvgIcon :name="iconMap[toast.type] || 'warning'" :size="18" class="toast-icon" />
           <span class="toast-message">{{ toast.message }}</span>
           <button class="toast-close" @click="remove(toast.id)" aria-label="Close">&times;</button>
         </div>
@@ -17,41 +18,54 @@
 </template>
 
 <script setup>
-import { useToast } from '@/composables/useToast';
+import { useToast } from '../../composables/useToast.js';
+import SvgIcon from '../icons/SvgIcon.vue';
 
 const { toasts, remove } = useToast();
+
+const iconMap = {
+  success: 'check',
+  error: 'close',
+  info: 'warning'
+};
 </script>
 
 <style scoped>
+/* Mobile-first: top center, full width */
 .toast-container {
   position: fixed;
-  top: 1rem;
-  right: 1rem;
+  top: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 2000;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-width: 360px;
+  gap: var(--spacing-sm);
+  width: calc(100% - 32px);
 }
 
 .toast {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
   font-size: 0.875rem;
   color: #fff;
 }
 
-.toast-success { background: #059669; }
-.toast-error { background: #dc2626; }
-.toast-info { background: #2563eb; }
+.toast-success { background: var(--color-success); }
+.toast-error { background: var(--color-danger-hover); }
+.toast-info { background: var(--color-primary); }
+
+.toast-icon {
+  flex-shrink: 0;
+  margin-right: var(--spacing-sm);
+}
 
 .toast-message {
   flex: 1;
-  margin-right: 0.5rem;
+  margin-right: var(--spacing-sm);
 }
 
 .toast-close {
@@ -68,19 +82,39 @@ const { toasts, remove } = useToast();
   opacity: 1;
 }
 
-/* Transitions */
-.toast-enter-active {
-  transition: all 0.3s ease;
+/* Desktop: right-top positioning, constrained width */
+@media (min-width: 768px) {
+  .toast-container {
+    left: auto;
+    right: var(--spacing-md);
+    transform: none;
+    width: auto;
+    max-width: 360px;
+  }
 }
+
+/* Transitions */
+.toast-enter-active,
 .toast-leave-active {
-  transition: all 0.3s ease;
+  transition: all var(--transition-slow);
 }
 .toast-enter-from {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateY(-100%);
 }
 .toast-leave-to {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateY(-100%);
+}
+
+@media (min-width: 768px) {
+  .toast-enter-from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  .toast-leave-to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }
 </style>

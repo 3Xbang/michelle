@@ -26,6 +26,7 @@ const routes = [
       { path: 'config', name: 'Config', component: () => import('../views/ConfigView.vue'), meta: { role: 'Admin' } },
       { path: 'users', name: 'UserList', component: () => import('../views/UserListView.vue'), meta: { role: 'Admin' } },
       { path: 'profile', name: 'Profile', component: () => import('../views/ProfileView.vue') },
+      { path: 'more', name: 'MoreMenu', component: () => import('../views/MoreMenuView.vue'), meta: { role: 'Admin' } },
     ],
   },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('../views/NotFoundView.vue') },
@@ -40,9 +41,15 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const hasAccess = localStorage.getItem('mira_access') === 'granted';
+
+  // If no access code and not on login page, redirect to login
+  if (!hasAccess && to.path !== '/login') {
+    return '/login';
+  }
 
   // Authenticated user accessing login → redirect to calendar
-  if (to.path === '/login' && token) {
+  if (to.path === '/login' && token && hasAccess) {
     return '/calendar';
   }
 

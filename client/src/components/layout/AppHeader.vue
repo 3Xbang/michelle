@@ -1,28 +1,46 @@
 <template>
   <header class="app-header">
-    <button class="hamburger" @click="$emit('toggle-sidebar')" aria-label="Toggle menu">☰</button>
+    <h1 class="page-title">{{ pageTitle }}</h1>
     <div class="header-right">
       <select v-model="locale" class="lang-select" @change="switchLang" aria-label="Language">
         <option value="zh-CN">中文</option>
         <option value="en-US">EN</option>
       </select>
-      <span class="user-name">{{ authStore.user?.name }}</span>
-      <router-link to="/profile" class="header-link">{{ t('nav.profile') }}</router-link>
-      <button class="logout-btn" @click="handleLogout">{{ t('nav.logout') }}</button>
     </div>
   </header>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.js';
 
-defineEmits(['toggle-sidebar']);
-
 const { t, locale } = useI18n();
-const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+
+const routeTitleMap = {
+  Calendar: 'calendar.title',
+  BookingList: 'booking.title',
+  BookingCreate: 'booking.createTitle',
+  BookingDetail: 'booking.editTitle',
+  TicketList: 'ticket.title',
+  TicketCreate: 'ticket.createTitle',
+  TicketDetail: 'ticket.detailTitle',
+  RoomList: 'room.title',
+  RoomEdit: 'room.editTitle',
+  Reports: 'report.title',
+  Config: 'config.title',
+  UserList: 'user.title',
+  Profile: 'profile.title',
+  MoreMenu: 'nav.more',
+};
+
+const pageTitle = computed(() => {
+  const key = routeTitleMap[route.name];
+  return key ? t(key) : '';
+});
 
 function switchLang() {
   localStorage.setItem('locale', locale.value);
@@ -31,11 +49,6 @@ function switchLang() {
     authStore.updateUser({ preferred_lang: lang });
   }
 }
-
-async function handleLogout() {
-  await authStore.logout();
-  router.push('/login');
-}
 </script>
 
 <style scoped>
@@ -43,59 +56,37 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   min-height: 56px;
 }
-.hamburger {
-  display: none;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.25rem;
+
+.page-title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
   margin-left: auto;
-}
-.lang-select {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-}
-.user-name {
-  color: #374151;
-  font-weight: 500;
-}
-.header-link {
-  color: #2563eb;
-  text-decoration: none;
-}
-.header-link:hover {
-  text-decoration: underline;
-}
-.logout-btn {
-  padding: 0.375rem 0.75rem;
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-.logout-btn:hover {
-  background: #dc2626;
+  flex-shrink: 0;
 }
 
-@media (max-width: 1023px) {
-  .hamburger {
-    display: block;
-  }
+.lang-select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  min-height: var(--touch-target-min);
 }
 </style>

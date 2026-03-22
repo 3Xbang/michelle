@@ -4,12 +4,12 @@
 
     <!-- Month navigation -->
     <div class="calendar-nav">
-      <button class="btn btn-outline" @click="prevMonth">
-        &laquo; {{ t('calendar.prevMonth') }}
+      <button class="btn btn-outline calendar-nav-btn" :aria-label="t('calendar.prevMonth')" @click="prevMonth">
+        <SvgIcon name="chevron-left" :size="24" />
       </button>
       <span class="calendar-month-label">{{ monthLabel }}</span>
-      <button class="btn btn-outline" @click="nextMonth">
-        {{ t('calendar.nextMonth') }} &raquo;
+      <button class="btn btn-outline calendar-nav-btn" :aria-label="t('calendar.nextMonth')" @click="nextMonth">
+        <SvgIcon name="chevron-right" :size="24" />
       </button>
     </div>
 
@@ -45,6 +45,7 @@ import apiClient from '../api/client.js';
 import { useToast } from '../composables/useToast.js';
 import CalendarGrid from '../components/calendar/CalendarGrid.vue';
 import BookingPopover from '../components/calendar/BookingPopover.vue';
+import SvgIcon from '../components/icons/SvgIcon.vue';
 
 const { t } = useI18n();
 const toast = useToast();
@@ -123,6 +124,15 @@ onMounted(fetchCalendarData);
   justify-content: center;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.calendar-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: 0.5rem;
 }
 
 .calendar-month-label {

@@ -8,6 +8,7 @@
     "confirm": "Confirm",
     "search": "Search",
     "filter": "Filter",
+    "apply": "Apply",
     "reset": "Reset",
     "loading": "Loading...",
     "noData": "No data",
@@ -35,16 +36,22 @@
     "config": "Configuration",
     "users": "Users",
     "profile": "Profile",
+    "more": "More",
     "logout": "Logout"
   },
   "auth": {
     "login": "Login",
-    "email": "Email",
+    "username": "Username",
     "password": "Password",
-    "loginTitle": "Villa PMS Login",
+    "loginTitle": "Mira PMS Login",
     "loginButton": "Login",
-    "loginFailed": "Login failed. Please check your email and password.",
-    "logoutSuccess": "Logged out successfully"
+    "loginFailed": "Login failed. Please check your username and password.",
+    "logoutSuccess": "Logged out successfully",
+    "accessTitle": "Access Verification",
+    "accessCode": "Access Code",
+    "accessCodePlaceholder": "Enter access code",
+    "enter": "Enter",
+    "wrongAccessCode": "Wrong access code"
   },
   "calendar": {
     "title": "Room Calendar",
@@ -227,6 +234,20 @@
     "deleteMessage": "Are you sure you want to delete? This action cannot be undone.",
     "logoutTitle": "Confirm Logout",
     "logoutMessage": "Are you sure you want to log out?"
+  },
+  "filter": {
+    "button": "Filter",
+    "apply": "Apply",
+    "reset": "Reset"
+  },
+  "pullToRefresh": {
+    "pull": "Pull to refresh",
+    "release": "Release to refresh",
+    "loading": "Loading..."
+  },
+  "infiniteScroll": {
+    "loadedAll": "All loaded",
+    "loadMore": "Load more"
   },
   "notFound": {
     "title": "404",

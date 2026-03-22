@@ -70,7 +70,8 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">
+          <button type="submit" class="btn btn-primary btn-icon" :disabled="submitting">
+            <SvgIcon name="save" :size="18" />
             {{ submitting ? t('common.loading') : t('common.save') }}
           </button>
           <router-link to="/bookings" class="btn btn-outline">{{ t('common.cancel') }}</router-link>
@@ -89,6 +90,7 @@ import { useToast } from '../composables/useToast.js';
 import { useValidation, required as requiredRule, nonNegative, dateAfter } from '../composables/useValidation.js';
 import apiClient from '../api/client.js';
 import FormField from '../components/common/FormField.vue';
+import SvgIcon from '../components/icons/SvgIcon.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -216,21 +218,42 @@ onMounted(() => {
 <style scoped>
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 0;
 }
 
-@media (max-width: 639px) {
+@media (min-width: 640px) {
   .form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 var(--spacing-lg);
   }
 }
 
 .form-actions {
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.form-actions .btn {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .form-actions {
+    flex-direction: row;
+  }
+
+  .form-actions .btn {
+    width: auto;
+  }
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

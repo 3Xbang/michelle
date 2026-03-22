@@ -9,16 +9,16 @@ import AppError from '../utils/errors.js';
  * Returns a signed JWT token and user profile on success.
  * Throws INVALID_CREDENTIALS (401) for wrong email or password.
  */
-export async function login(email, password) {
-  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+export async function login(username, password) {
+  const result = await pool.query('SELECT * FROM users WHERE name = $1', [username]);
   if (result.rows.length === 0) {
-    throw new AppError('INVALID_CREDENTIALS', 401, 'Invalid email or password');
+    throw new AppError('INVALID_CREDENTIALS', 401, 'Invalid username or password');
   }
 
   const user = result.rows[0];
   const valid = await bcrypt.compare(password, user.password_hash);
   if (!valid) {
-    throw new AppError('INVALID_CREDENTIALS', 401, 'Invalid email or password');
+    throw new AppError('INVALID_CREDENTIALS', 401, 'Invalid username or password');
   }
 
   const token = jwt.sign(

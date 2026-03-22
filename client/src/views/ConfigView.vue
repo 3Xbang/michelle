@@ -2,41 +2,69 @@
   <div>
     <div class="page-header">
       <h1 class="page-title">{{ t('config.title') }}</h1>
-      <button class="btn btn-primary" @click="openForm(null)">{{ t('config.addConfig') }}</button>
+      <button v-if="isDesktop" class="btn btn-primary" @click="openForm(null)">{{ t('config.addConfig') }}</button>
     </div>
 
     <!-- Config List -->
     <div class="card">
-      <div v-if="appStore.configLoading" class="table-loading">{{ t('common.loading') }}</div>
-      <div v-else-if="appStore.configs.length === 0" class="table-empty">{{ t('common.noData') }}</div>
-      <div v-else class="table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{{ t('config.configKey') }}</th>
-              <th>{{ t('config.configValue') }}</th>
-              <th>{{ t('config.featureSwitch') }}</th>
-              <th>{{ t('common.updatedAt') }}</th>
-              <th>{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="cfg in appStore.configs" :key="cfg.id">
-              <td>{{ cfg.config_key }}</td>
-              <td>{{ cfg.config_value }}</td>
-              <td>
-                <span class="switch-badge" :class="cfg.feature_switch ? 'switch-on' : 'switch-off'">
-                  {{ cfg.feature_switch ? t('common.yes') : t('common.no') }}
-                </span>
-              </td>
-              <td>{{ cfg.updated_at }}</td>
-              <td>
-                <button class="btn btn-outline btn-sm" @click="openForm(cfg)">{{ t('common.edit') }}</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <PullToRefresh :loading="appStore.configLoading" @refresh="handlePullRefresh">
+        <div v-if="appStore.configLoading" class="table-loading">{{ t('common.loading') }}</div>
+        <div v-else-if="appStore.configs.length === 0" class="table-empty">{{ t('common.noData') }}</div>
+
+        <!-- Mobile: Card Layout -->
+        <div v-else-if="!isDesktop" class="config-card-list">
+          <div
+            v-for="cfg in appStore.configs"
+            :key="cfg.id"
+            class="config-card"
+            @click="openForm(cfg)"
+          >
+            <div class="config-card-header">
+              <span class="config-card-key">{{ cfg.config_key }}</span>
+              <span class="switch-badge" :class="cfg.feature_switch ? 'switch-on' : 'switch-off'">
+                {{ cfg.feature_switch ? t('common.yes') : t('common.no') }}
+              </span>
+            </div>
+            <div class="config-card-value">{{ cfg.config_value || '—' }}</div>
+            <div class="config-card-meta">{{ cfg.updated_at }}</div>
+          </div>
+        </div>
+
+        <!-- Desktop: Table Layout -->
+        <div v-else class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>{{ t('config.configKey') }}</th>
+                <th>{{ t('config.configValue') }}</th>
+                <th>{{ t('config.featureSwitch') }}</th>
+                <th>{{ t('common.updatedAt') }}</th>
+                <th>{{ t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="cfg in appStore.configs" :key="cfg.id">
+                <td>{{ cfg.config_key }}</td>
+                <td>{{ cfg.config_value }}</td>
+                <td>
+                  <span class="switch-badge" :class="cfg.feature_switch ? 'switch-on' : 'switch-off'">
+                    {{ cfg.feature_switch ? t('common.yes') : t('common.no') }}
+                  </span>
+                </td>
+                <td>{{ cfg.updated_at }}</td>
+                <td>
+                  <button class="btn btn-outline btn-sm" @click="openForm(cfg)">{{ t('common.edit') }}</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </PullToRefresh>
+    </div>
+
+    <!-- Mobile: Add config button -->
+    <div v-if="!isDesktop" class="mobile-create-bar">
+      <button class="btn btn-primary mobile-create-btn" @click="openForm(null)">{{ t('config.addConfig') }}</button>
     </div>
 
     <!-- Add/Edit Form Modal -->
@@ -73,12 +101,15 @@ import { ref, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '../stores/app.js';
 import { useToast } from '../composables/useToast.js';
+import { useMediaQuery } from '../composables/useMediaQuery.js';
 import { useValidation, required as requiredRule } from '../composables/useValidation.js';
 import FormField from '../components/common/FormField.vue';
+import PullToRefresh from '../components/common/PullToRefresh.vue';
 
 const { t } = useI18n();
 const appStore = useAppStore();
 const toast = useToast();
+const isDesktop = useMediaQuery('(min-width: 768px)');
 
 const showForm = ref(false);
 const editingConfig = ref(null);
@@ -120,6 +151,10 @@ function closeForm() {
   editingConfig.value = null;
 }
 
+function handlePullRefresh() {
+  appStore.fetchConfigs();
+}
+
 async function handleSubmit() {
   if (!validateAll(form)) return;
 
@@ -157,7 +192,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--spacing-lg);
 }
 
 .page-header .page-title {
@@ -167,39 +202,92 @@ onMounted(() => {
 .table-loading,
 .table-empty {
   text-align: center;
-  padding: 2rem 0.75rem;
-  color: #6b7280;
+  padding: var(--spacing-xl) var(--spacing-md);
+  color: var(--color-text-muted);
 }
 
+/* Mobile Card Layout */
+.config-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.config-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: box-shadow var(--transition-fast);
+  border: 1px solid var(--color-border-light);
+}
+
+.config-card:active {
+  box-shadow: var(--shadow-md);
+}
+
+.config-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.config-card-key {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: var(--spacing-sm);
+}
+
+.config-card-value {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+  word-break: break-all;
+}
+
+.config-card-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Desktop Table Layout */
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
 }
 
 .data-table th,
 .data-table td {
   padding: 0.625rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .data-table th {
-  background: #f9fafb;
+  background: var(--color-bg);
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .data-table tbody tr:hover {
-  background: #f9fafb;
+  background: var(--color-bg);
 }
 
 .switch-badge {
   display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
   font-weight: 500;
 }
 
@@ -215,7 +303,15 @@ onMounted(() => {
 
 .btn-sm {
   padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
+  font-size: var(--font-size-sm);
+}
+
+.mobile-create-bar {
+  margin-top: var(--spacing-md);
+}
+
+.mobile-create-btn {
+  width: 100%;
 }
 
 /* Modal */
@@ -229,40 +325,64 @@ onMounted(() => {
   z-index: 1000;
 }
 
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    margin: 0;
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+    min-height: var(--touch-target-nav);
+  }
+}
+
 .modal-content {
   width: 100%;
   max-width: 480px;
-  margin: 1rem;
+  margin: var(--spacing-md);
 }
 
 .modal-title {
-  font-size: 1.125rem;
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .form-actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
 }
 
 .toggle-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   cursor: pointer;
+  min-height: var(--touch-target-nav);
 }
 
 .toggle-input {
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .toggle-text {
-  font-size: 0.875rem;
-  color: #374151;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 </style>

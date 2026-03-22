@@ -15,36 +15,32 @@
       </button>
     </div>
 
-    <!-- Date Range Filter -->
-    <div class="filter-bar">
-      <div class="filter-item">
-        <label class="form-label">{{ t('report.from') }}</label>
-        <input v-model="dateFrom" type="date" class="form-input" @change="fetchReport" />
-      </div>
-      <div class="filter-item">
-        <label class="form-label">{{ t('report.to') }}</label>
-        <input v-model="dateTo" type="date" class="form-input" @change="fetchReport" />
-      </div>
-      <div class="filter-item export-group">
-        <label class="form-label">{{ t('report.granularity') }}</label>
-        <select v-model="granularity" class="form-select">
-          <option value="weekly">{{ t('report.weekly') }}</option>
-          <option value="monthly">{{ t('report.monthly') }}</option>
-        </select>
-      </div>
-      <div class="filter-item filter-actions">
-        <button class="btn btn-primary" @click="handleExport">{{ t('report.exportCsv') }}</button>
-      </div>
+    <!-- Filters: MobileFilter for responsive behavior -->
+    <MobileFilter
+      :filters="currentFilters"
+      :filter-fields="filterFields"
+      :active-count="activeFilterCount"
+      @apply="handleFilterApply"
+      @reset="handleFilterReset"
+    />
+
+    <!-- Export button -->
+    <div class="export-bar">
+      <button class="btn btn-primary" @click="handleExport">{{ t('report.exportCsv') }}</button>
     </div>
 
-    <!-- Report Table -->
+    <!-- Report Table with horizontal scroll on mobile -->
     <div class="card">
-      <ReportTable
-        :columns="currentColumns"
-        :data="reportData"
-        :loading="loading"
-        :summary="summaryRow"
-      />
+      <div v-if="loading" class="table-loading">{{ t('common.loading') }}</div>
+      <div v-else-if="!reportData || reportData.length === 0" class="table-empty">{{ t('common.noData') }}</div>
+      <div v-else class="report-table-scroll">
+        <ReportTable
+          :columns="currentColumns"
+          :data="reportData"
+          :loading="false"
+          :summary="summaryRow"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -53,11 +49,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '../composables/useToast.js';
+import { useMediaQuery } from '../composables/useMediaQuery.js';
 import apiClient from '../api/client.js';
 import ReportTable from '../components/report/ReportTable.vue';
+import MobileFilter from '../components/common/MobileFilter.vue';
 
 const { t } = useI18n();
 const toast = useToast();
+const isDesktop = useMediaQuery('(min-width: 768px)');
 
 const activeDimension = ref('room');
 const dateFrom = ref('');
@@ -72,6 +71,47 @@ const dimensions = computed(() => [
   { key: 'platform', label: t('report.byPlatform') },
   { key: 'month', label: t('report.byMonth') },
 ]);
+
+const currentFilters = computed(() => ({
+  from: dateFrom.value,
+  to: dateTo.value,
+  granularity: granularity.value,
+}));
+
+const filterFields = computed(() => [
+  { key: 'from', label: t('report.from'), type: 'date' },
+  { key: 'to', label: t('report.to'), type: 'date' },
+  {
+    key: 'granularity',
+    label: t('report.granularity'),
+    type: 'select',
+    options: [
+      { value: 'weekly', label: t('report.weekly') },
+      { value: 'monthly', label: t('report.monthly') },
+    ],
+  },
+]);
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (dateFrom.value) count++;
+  if (dateTo.value) count++;
+  return count;
+});
+
+function handleFilterApply(newFilters) {
+  dateFrom.value = newFilters.from || '';
+  dateTo.value = newFilters.to || '';
+  granularity.value = newFilters.granularity || 'monthly';
+  fetchReport();
+}
+
+function handleFilterReset() {
+  dateFrom.value = '';
+  dateTo.value = '';
+  granularity.value = 'monthly';
+  fetchReport();
+}
 
 function formatNumber(val) {
   if (val == null) return '-';
@@ -180,43 +220,54 @@ onMounted(() => {
 <style scoped>
 .tabs {
   display: flex;
-  gap: 0.25rem;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #e5e7eb;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--color-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab-btn {
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+  min-height: var(--touch-target-min);
 }
 
 .tab-btn:hover {
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .tab-btn.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
   font-weight: 600;
 }
 
-.filter-item {
-  min-width: 140px;
-}
-
-.filter-actions {
+.export-bar {
   display: flex;
-  align-items: flex-end;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-md);
 }
 
-.export-group {
-  min-width: 120px;
+/* Horizontally scrollable table wrapper for mobile */
+.report-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-loading,
+.table-empty {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
 }
 </style>

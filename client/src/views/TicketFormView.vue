@@ -26,6 +26,7 @@
             <span class="detail-label">{{ t('common.status') }}</span>
             <span class="detail-value">
               <span class="status-badge" :class="'status-' + ticket.ticket_status">
+                <SvgIcon :name="statusIcon(ticket.ticket_status)" :size="14" />
                 {{ t('enum.ticketStatus.' + ticket.ticket_status) }}
               </span>
             </span>
@@ -111,7 +112,8 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">
+          <button type="submit" class="btn btn-primary btn-icon" :disabled="submitting">
+            <SvgIcon name="save" :size="18" />
             {{ submitting ? t('common.loading') : t('common.submit') }}
           </button>
           <router-link to="/tickets" class="btn btn-outline">{{ t('common.cancel') }}</router-link>
@@ -130,6 +132,21 @@ import { useToast } from '../composables/useToast.js';
 import { useValidation, required as requiredRule } from '../composables/useValidation.js';
 import apiClient from '../api/client.js';
 import FormField from '../components/common/FormField.vue';
+import SvgIcon from '../components/icons/SvgIcon.vue';
+
+const STATUS_ICON_MAP = {
+  pending: 'clock',
+  checked_in: 'check',
+  completed: 'check',
+  checked_out: 'close',
+  urgent: 'warning',
+  active: 'check',
+  maintenance: 'warning',
+};
+
+function statusIcon(status) {
+  return STATUS_ICON_MAP[status] || 'clock';
+}
 
 const { t } = useI18n();
 const route = useRoute();
@@ -221,26 +238,47 @@ onMounted(() => {
 <style scoped>
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0 var(--spacing-lg);
+  }
 }
 
 .form-full {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 639px) {
-  .form-grid {
-    grid-template-columns: 1fr;
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.form-actions .btn {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .form-actions {
+    flex-direction: row;
+  }
+
+  .form-actions .btn {
+    width: auto;
   }
 }
 
-.form-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .form-textarea {
@@ -251,70 +289,71 @@ onMounted(() => {
 .file-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
 }
 
 .file-tag {
-  background: #f3f4f6;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.8rem;
-  color: #374151;
+  background: var(--color-border-light);
+  padding: 0.125rem var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 /* Detail styles */
 .detail-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem 1.5rem;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md) 0;
+}
+
+@media (min-width: 640px) {
+  .detail-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md) var(--spacing-lg);
+  }
 }
 
 .detail-full {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 639px) {
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
 }
 
 .detail-label {
-  font-size: 0.8rem;
-  color: #6b7280;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
   font-weight: 500;
 }
 
 .detail-value {
-  font-size: 0.9375rem;
-  color: #111827;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
 }
 
 .detail-photos {
-  margin-top: 1rem;
+  margin-top: var(--spacing-md);
 }
 
 .photo-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 0.5rem;
+  margin-top: var(--spacing-sm);
 }
 
 .photo-thumb {
   display: block;
   width: 120px;
   height: 120px;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
 }
 
 .photo-thumb img {
@@ -325,28 +364,28 @@ onMounted(() => {
 
 .priority-badge {
   display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  padding: 0.125rem var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
   font-weight: 600;
 }
 
 .priority-urgent {
   background: #fef2f2;
-  color: #dc2626;
+  color: var(--color-danger-hover);
   border: 1px solid #fecaca;
 }
 
 .priority-normal {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--color-border-light);
+  color: var(--color-text-muted);
 }
 
 .status-badge {
   display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  padding: 0.125rem var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
   font-weight: 500;
 }
 

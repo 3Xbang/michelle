@@ -1,11 +1,10 @@
 <template>
-  <aside class="sidebar" :class="{ open }">
+  <aside class="sidebar">
     <div class="sidebar-header">
       <h2 class="sidebar-logo">Villa PMS</h2>
-      <button class="sidebar-close" @click="$emit('close')" aria-label="Close menu">&times;</button>
     </div>
     <nav class="sidebar-nav">
-      <router-link v-for="item in visibleItems" :key="item.to" :to="item.to" class="nav-item" @click="$emit('close')">
+      <router-link v-for="item in visibleItems" :key="item.to" :to="item.to" class="nav-item">
         {{ t(item.label) }}
       </router-link>
     </nav>
@@ -16,9 +15,6 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '../../stores/auth.js';
-
-defineProps({ open: Boolean });
-defineEmits(['close']);
 
 const { t } = useI18n();
 const authStore = useAuthStore();
@@ -41,65 +37,45 @@ const visibleItems = computed(() =>
 <style scoped>
 .sidebar {
   width: 240px;
-  background: #1a1a2e;
-  color: #fff;
+  background: var(--color-nav-bg);
+  color: var(--color-nav-active);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: transform 0.3s;
 }
 .sidebar-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .sidebar-logo {
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0;
 }
-.sidebar-close {
-  display: none;
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem 0;
+  padding: var(--spacing-sm) 0;
 }
 .nav-item {
   display: block;
   padding: 0.75rem 1.25rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--color-nav-text);
   text-decoration: none;
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--transition-normal), color var(--transition-normal);
 }
 .nav-item:hover,
 .nav-item.router-link-active {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-nav-active);
 }
 
+/* Fallback: hide on mobile (AppLayout already uses v-if="isDesktop") */
 @media (max-width: 1023px) {
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 100;
-    transform: translateX(-100%);
-  }
-  .sidebar.open {
-    transform: translateX(0);
-  }
-  .sidebar-close {
-    display: block;
+    display: none;
   }
 }
 </style>

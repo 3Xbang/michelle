@@ -15,7 +15,7 @@ const pool = new pg.Pool({
 });
 
 const ADMIN_USER = {
-  name: 'Admin',
+  name: 'admin',
   email: 'admin@villapms.com',
   password: 'admin123',
   role: 'Admin',

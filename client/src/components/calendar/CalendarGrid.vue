@@ -4,8 +4,9 @@
       <!-- Header row: room label column + day columns -->
       <div class="grid-header">
         <div class="room-label-cell header-cell">{{ t('booking.room') }}</div>
-        <div v-for="day in daysInMonth" :key="day" class="day-cell header-cell">
-          {{ day }}
+        <div v-for="info in dayInfos" :key="info.day" class="day-cell header-cell">
+          <span class="day-number">{{ info.day }}</span>
+          <span class="day-weekday">{{ info.weekday }}</span>
         </div>
       </div>
 
@@ -68,6 +69,20 @@ const emit = defineEmits(['booking-click']);
 const daysInMonth = computed(() => {
   const count = new Date(props.year, props.month, 0).getDate();
   return Array.from({ length: count }, (_, i) => i + 1);
+});
+
+const weekdayAbbrs = {
+  'zh-CN': ['日', '一', '二', '三', '四', '五', '六'],
+  'en-US': ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+};
+
+const dayInfos = computed(() => {
+  return daysInMonth.value.map((day) => {
+    const date = new Date(props.year, props.month - 1, day);
+    const dow = date.getDay();
+    const abbrs = weekdayAbbrs[locale.value] || weekdayAbbrs['en-US'];
+    return { day, weekday: abbrs[dow] };
+  });
 });
 
 function roomDisplayName(room) {
@@ -151,13 +166,22 @@ function handleBookingClick(event, booking) {
   width: 120px;
   flex-shrink: 0;
   padding: 0.5rem 0.5rem;
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm, 0.8125rem);
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-secondary, #374151);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--color-border, #e5e7eb);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface, #ffffff);
+}
+
+.grid-header .room-label-cell {
+  background: #f9fafb;
+  z-index: 3;
 }
 
 .room-name {
@@ -179,12 +203,28 @@ function handleBookingClick(event, booking) {
 .grid-header .day-cell {
   flex: 1;
   min-width: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.day-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.day-weekday {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: var(--color-text-muted, #6b7280);
 }
 
 .grid-row {
   display: flex;
   border-bottom: 1px solid #f3f4f6;
-  min-height: 40px;
+  min-height: 48px;
 }
 
 .grid-row:hover {
@@ -192,6 +232,10 @@ function handleBookingClick(event, booking) {
 }
 
 .maintenance-row {
+  background: #f9fafb;
+}
+
+.maintenance-row > .room-label-cell {
   background: #f9fafb;
 }
 
@@ -210,7 +254,7 @@ function handleBookingClick(event, booking) {
 .booking-bar {
   position: absolute;
   top: 6px;
-  height: 28px;
+  height: 36px;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -244,7 +288,7 @@ function handleBookingClick(event, booking) {
 }
 
 .bar-text {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
