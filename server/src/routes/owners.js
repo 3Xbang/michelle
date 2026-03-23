@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { requireRole } from '../middleware/rbac.js';
+import { authorize } from '../middleware/rbac.js';
 import * as ownerService from '../services/ownerService.js';
 
 const router = Router();
-router.use(authenticate, requireRole('Admin'));
+router.use(authenticate, authorize('Admin'));
 
 // Owners CRUD
 router.get('/', async (req, res, next) => {
