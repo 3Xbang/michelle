@@ -60,11 +60,12 @@ export async function remove(id) {
 }
 
 // --- Templates ---
-const TPL_COLS = 'id, owner_id, template_name, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes, created_at, updated_at';
+const TPL_COLS = 'id, owner_id, template_name, project_name, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes, created_at, updated_at';
 
 export async function getTemplatesByOwner(ownerId) {
   const result = await pool.query(
-    `SELECT t.id, t.owner_id, t.template_name, t.bedrooms, t.bathrooms, t.kitchens,
+    `SELECT t.id, t.owner_id, t.template_name, t.project_name, t.project_type,
+            t.bedrooms, t.bathrooms, t.kitchens,
             t.daily_rate, t.monthly_rate, t.yearly_rate, t.room_prefix, t.notes, t.created_at, t.updated_at,
             COUNT(r.id)::int AS room_count
      FROM room_templates t
@@ -86,19 +87,20 @@ export async function getTemplateById(id) {
 
 export async function createTemplate(data) {
   const {
-    owner_id, template_name, bedrooms = 1, bathrooms = 1, kitchens = 0,
+    owner_id, template_name, project_name = null, project_type = 'apartment',
+    bedrooms = 1, bathrooms = 1, kitchens = 0,
     daily_rate = 0, monthly_rate = 0, yearly_rate = 0, room_prefix = null, notes = null
   } = data;
   const result = await pool.query(
-    `INSERT INTO room_templates (owner_id, template_name, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING ${TPL_COLS}`,
-    [owner_id, template_name, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes]
+    `INSERT INTO room_templates (owner_id, template_name, project_name, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ${TPL_COLS}`,
+    [owner_id, template_name, project_name, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes]
   );
   return result.rows[0];
 }
 
 export async function updateTemplate(id, data) {
-  const allowed = ['template_name', 'bedrooms', 'bathrooms', 'kitchens', 'daily_rate', 'monthly_rate', 'yearly_rate', 'room_prefix', 'notes'];
+  const allowed = ['template_name', 'project_name', 'project_type', 'bedrooms', 'bathrooms', 'kitchens', 'daily_rate', 'monthly_rate', 'yearly_rate', 'room_prefix', 'notes'];
   const fields = [], values = [];
   let idx = 1;
   for (const f of allowed) {

@@ -32,7 +32,10 @@
           <FormField :label="t('owner.template')">
             <select v-model="form.template_id" class="form-select" :disabled="!form.owner_id || !templates.length">
               <option value="">-- {{ t('common.none') }} --</option>
-              <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">{{ tpl.template_name }}</option>
+              <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">
+                {{ tpl.project_name || tpl.template_name }}
+                <template v-if="tpl.project_type"> ({{ tpl.project_type }})</template>
+              </option>
             </select>
           </FormField>
 

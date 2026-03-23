@@ -49,6 +49,10 @@
             <div v-for="tpl in templates[owner.id]" :key="tpl.id" class="template-row">
               <div class="template-info">
                 <div class="template-name">{{ tpl.template_name }}</div>
+                <div class="template-project" v-if="tpl.project_name">
+                  <span class="project-type-badge" :class="'type-' + tpl.project_type">{{ t('enum.roomType.' + tpl.project_type) }}</span>
+                  {{ tpl.project_name }}
+                </div>
                 <div class="template-specs">
                   🛏 {{ tpl.bedrooms }} &nbsp; 🚿 {{ tpl.bathrooms }} &nbsp; 🍳 {{ tpl.kitchens }}
                 </div>
@@ -124,6 +128,18 @@
           <FormField :label="t('owner.templateName')" required>
             <input v-model="templateForm.template_name" class="form-input" required />
           </FormField>
+          <div class="form-row-2">
+            <FormField :label="t('owner.projectType')" required>
+              <select v-model="templateForm.project_type" class="form-select">
+                <option value="apartment">{{ t('enum.roomType.apartment') }}</option>
+                <option value="homestay">{{ t('enum.roomType.homestay') }}</option>
+                <option value="villa">{{ t('enum.roomType.villa') }}</option>
+              </select>
+            </FormField>
+            <FormField :label="t('owner.projectName')" required>
+              <input v-model="templateForm.project_name" class="form-input" :placeholder="t('owner.projectNameHint')" required />
+            </FormField>
+          </div>
           <div class="form-row-3">
             <FormField :label="t('owner.bedrooms')">
               <select v-model.number="templateForm.bedrooms" class="form-select">
@@ -253,7 +269,7 @@ const showTemplateForm = ref(false);
 const editingTemplate = ref(null);
 const deletingTemplate = ref(null);
 const currentOwnerId = ref(null);
-const templateForm = reactive({ template_name: '', bedrooms: 1, bathrooms: 1, kitchens: 0, daily_rate: 0, monthly_rate: 0, yearly_rate: 0, room_prefix: '', notes: '' });
+const templateForm = reactive({ template_name: '', project_name: '', project_type: 'apartment', bedrooms: 1, bathrooms: 1, kitchens: 0, daily_rate: 0, monthly_rate: 0, yearly_rate: 0, room_prefix: '', notes: '' });
 
 // Batch create
 const showBatchCreate = ref(false);
@@ -307,8 +323,8 @@ async function handleDeleteOwner() {
 function openTemplateForm(ownerId, tpl) {
   currentOwnerId.value = ownerId;
   editingTemplate.value = tpl;
-  if (tpl) { Object.assign(templateForm, { template_name: tpl.template_name, bedrooms: tpl.bedrooms, bathrooms: tpl.bathrooms, kitchens: tpl.kitchens, daily_rate: tpl.daily_rate, monthly_rate: tpl.monthly_rate, yearly_rate: tpl.yearly_rate, room_prefix: tpl.room_prefix || '', notes: tpl.notes || '' }); }
-  else { Object.assign(templateForm, { template_name: '', bedrooms: 1, bathrooms: 1, kitchens: 0, daily_rate: 0, monthly_rate: 0, yearly_rate: 0, room_prefix: '', notes: '' }); }
+  if (tpl) { Object.assign(templateForm, { template_name: tpl.template_name, project_name: tpl.project_name || '', project_type: tpl.project_type || 'apartment', bedrooms: tpl.bedrooms, bathrooms: tpl.bathrooms, kitchens: tpl.kitchens, daily_rate: tpl.daily_rate, monthly_rate: tpl.monthly_rate, yearly_rate: tpl.yearly_rate, room_prefix: tpl.room_prefix || '', notes: tpl.notes || '' }); }
+  else { Object.assign(templateForm, { template_name: '', project_name: '', project_type: 'apartment', bedrooms: 1, bathrooms: 1, kitchens: 0, daily_rate: 0, monthly_rate: 0, yearly_rate: 0, room_prefix: '', notes: '' }); }
   showTemplateForm.value = true;
 }
 
@@ -422,4 +438,10 @@ onMounted(fetchOwners);
 .contact-value { flex: 1; }
 .contact-remove { flex-shrink: 0; padding: 0.25rem 0.5rem; }
 .contact-chip { background: #f0fdf4; color: #166534; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.75rem; }
+
+.template-project { font-size: 0.8125rem; color: var(--color-text-secondary, #6b7280); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.375rem; }
+.project-type-badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+.type-apartment { background: #dbeafe; color: #1d4ed8; }
+.type-homestay { background: #dcfce7; color: #166534; }
+.type-villa { background: #fef9c3; color: #854d0e; }
 </style>
