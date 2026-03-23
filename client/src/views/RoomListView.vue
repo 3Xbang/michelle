@@ -57,17 +57,32 @@
         <span class="bc-sep">›</span>
         <span class="bc-cur">{{ t('enum.roomType.' + selectedType.type) }}</span>
       </div>
-      <div class="card-grid">
+      <div class="card-grid card-grid-tpl">
         <div v-for="tpl in selectedType.templates" :key="tpl.id"
-             class="tile tile-template" @click="selectTemplate(tpl)">
-          <div class="tile-proj-name">{{ tpl.project_name || tpl.template_name }}</div>
-          <div v-if="tpl.project_name_en" class="tile-sub">{{ tpl.project_name_en }}</div>
-          <div class="tile-count">{{ tpl.rooms.length }} {{ t('owner.rooms') }}</div>
+             class="tile tile-template" :class="'tpl-' + selectedType.type" @click="selectTemplate(tpl)">
+          <div class="tpl-header">
+            <span class="tpl-type-badge" :class="'badge-' + selectedType.type">{{ t('enum.roomType.' + selectedType.type) }}</span>
+            <span class="tpl-room-count">{{ tpl.rooms.length }} 套</span>
+          </div>
+          <div class="tpl-proj-name">{{ tpl.project_name || tpl.template_name }}</div>
+          <div v-if="tpl.project_name_en" class="tpl-proj-en">{{ tpl.project_name_en }}</div>
+          <div class="tpl-specs">
+            <span>🛏 {{ tpl.bedrooms }}室</span>
+            <span>🚿 {{ tpl.bathrooms }}卫</span>
+            <span v-if="tpl.kitchens > 0">🍳 {{ tpl.kitchens }}厨</span>
+          </div>
+          <div class="tpl-price">
+            <span class="tpl-price-main">¥{{ formatNum(tpl.daily_rate) }}<small>/日</small></span>
+            <span v-if="tpl.monthly_rate > 0" class="tpl-price-sub">月 ¥{{ formatNum(tpl.monthly_rate) }}</span>
+          </div>
         </div>
         <div v-if="selectedType.noTplRooms.length > 0"
-             class="tile tile-template tile-notpl" @click="selectTemplate({ id: 'no_tpl', template_name: '未分类', rooms: selectedType.noTplRooms })">
-          <div class="tile-proj-name">未分类房源</div>
-          <div class="tile-count">{{ selectedType.noTplRooms.length }} {{ t('owner.rooms') }}</div>
+             class="tile tile-template tpl-uncat" @click="selectTemplate({ id: 'no_tpl', template_name: '未分类', rooms: selectedType.noTplRooms })">
+          <div class="tpl-header">
+            <span class="tpl-type-badge badge-uncat">未分类</span>
+            <span class="tpl-room-count">{{ selectedType.noTplRooms.length }} 套</span>
+          </div>
+          <div class="tpl-proj-name">未分类房源</div>
         </div>
       </div>
     </template>
@@ -188,6 +203,11 @@ const treeData = computed(() => {
 
 const noOwnerRooms = computed(() => store.rooms.filter(r => !r.owner_id));
 
+function formatNum(v) {
+  if (!v) return '0';
+  return Number(v).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 function confirmDelete(room) { deletingRoom.value = room; }
 async function handleDelete() {
   if (!deletingRoom.value) return;
@@ -276,9 +296,52 @@ onMounted(loadAll);
 .tile-template {
   background: #fff; border: 1.5px solid #e5e7eb;
   align-items: flex-start; text-align: left; padding: 1.25rem;
+  min-height: 150px;
 }
-.tile-template:hover { border-color: #2563eb; background: #f0f9ff; }
+.tile-template:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
 .tile-notpl { border-style: dashed; background: #fafafa; }
+
+/* Template color themes by type */
+.tpl-apartment { background: linear-gradient(145deg, #eff6ff 0%, #fff 60%); border-color: #93c5fd; }
+.tpl-apartment:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,0.15); }
+.tpl-villa { background: linear-gradient(145deg, #fefce8 0%, #fff 60%); border-color: #fde047; }
+.tpl-villa:hover { border-color: #ca8a04; box-shadow: 0 4px 16px rgba(202,138,4,0.15); }
+.tpl-homestay { background: linear-gradient(145deg, #f0fdf4 0%, #fff 60%); border-color: #86efac; }
+.tpl-homestay:hover { border-color: #16a34a; box-shadow: 0 4px 16px rgba(22,163,74,0.15); }
+.tpl-uncat { background: #fafafa; border: 1.5px dashed #d1d5db; }
+
+.card-grid-tpl {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.tpl-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.625rem; width: 100%;
+}
+.tpl-type-badge {
+  font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+.badge-apartment { background: #dbeafe; color: #1d4ed8; }
+.badge-villa { background: #fef9c3; color: #854d0e; }
+.badge-homestay { background: #dcfce7; color: #166534; }
+.badge-uncat { background: #f3f4f6; color: #6b7280; }
+
+.tpl-room-count {
+  font-size: 0.75rem; font-weight: 700; color: #6b7280;
+  background: rgba(0,0,0,0.06); border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+.tpl-proj-name { font-weight: 700; font-size: 0.9375rem; color: #111827; line-height: 1.3; margin-bottom: 0.25rem; }
+.tpl-proj-en { font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.5rem; }
+.tpl-specs {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+  font-size: 0.75rem; color: #6b7280; margin-bottom: 0.375rem;
+}
+.tpl-price { display: flex; align-items: baseline; gap: 0.5rem; margin-top: auto; padding-top: 0.375rem; }
+.tpl-price-main { font-size: 1rem; font-weight: 800; color: #2563eb; }
+.tpl-price-main small { font-size: 0.7rem; font-weight: 500; color: #6b7280; }
+.tpl-price-sub { font-size: 0.75rem; color: #9ca3af; }
 
 .tile-proj-name { font-weight: 700; font-size: 1rem; color: #111827; line-height: 1.3; }
 .tile-name { font-weight: 700; font-size: 1rem; color: #111827; }
