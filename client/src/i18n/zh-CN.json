@@ -288,6 +288,7 @@
     "addOwner": "新增业主",
     "editOwner": "编辑业主",
     "name": "业主名称",
+    "nameEn": "英文名称",
     "phone": "联系电话",
     "wechat": "微信",
     "notes": "备注",
@@ -318,6 +319,8 @@
     "preview": "预览",
     "createRooms": "新增 {count} 套房间",
     "batchSuccess": "成功新增 {count} 套房间",
+    "otherContacts": "其他联系方式",
+    "addContact": "添加联系方式",
     "owner": "业主",
     "template": "房型模板"
   }

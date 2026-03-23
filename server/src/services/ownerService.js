@@ -1,11 +1,11 @@
 import pool from '../models/db.js';
 import AppError from '../utils/errors.js';
 
-const OWNER_COLS = 'id, name, phone, wechat, notes, management_fee_rate, created_at, updated_at';
+const OWNER_COLS = 'id, name, name_en, phone, wechat, contacts, notes, management_fee_rate, created_at, updated_at';
 
 export async function getAll() {
   const result = await pool.query(
-    `SELECT o.${OWNER_COLS.split(', ').map(c => 'o.' + c).join(', ')},
+    `SELECT o.id, o.name, o.name_en, o.phone, o.wechat, o.contacts, o.notes, o.management_fee_rate, o.created_at, o.updated_at,
             COUNT(r.id)::int AS room_count
      FROM owners o
      LEFT JOIN rooms r ON r.owner_id = o.id
@@ -24,21 +24,24 @@ export async function getById(id) {
 }
 
 export async function create(data) {
-  const { name, phone = null, wechat = null, notes = null, management_fee_rate = 0 } = data;
+  const { name, name_en = null, phone = null, wechat = null, contacts = [], notes = null, management_fee_rate = 0 } = data;
   const result = await pool.query(
-    `INSERT INTO owners (name, phone, wechat, notes, management_fee_rate)
-     VALUES ($1, $2, $3, $4, $5) RETURNING ${OWNER_COLS}`,
-    [name, phone, wechat, notes, management_fee_rate]
+    `INSERT INTO owners (name, name_en, phone, wechat, contacts, notes, management_fee_rate)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING ${OWNER_COLS}`,
+    [name, name_en, phone, wechat, JSON.stringify(contacts), notes, management_fee_rate]
   );
   return result.rows[0];
 }
 
 export async function update(id, data) {
-  const allowed = ['name', 'phone', 'wechat', 'notes', 'management_fee_rate'];
+  const allowed = ['name', 'name_en', 'phone', 'wechat', 'contacts', 'notes', 'management_fee_rate'];
   const fields = [], values = [];
   let idx = 1;
   for (const f of allowed) {
-    if (data[f] !== undefined) { fields.push(`${f} = $${idx++}`); values.push(data[f]); }
+    if (data[f] !== undefined) {
+      fields.push(`${f} = $${idx++}`);
+      values.push(f === 'contacts' ? JSON.stringify(data[f]) : data[f]);
+    }
   }
   if (!fields.length) return getById(id);
   fields.push('updated_at = NOW()');
@@ -61,7 +64,8 @@ const TPL_COLS = 'id, owner_id, template_name, bedrooms, bathrooms, kitchens, da
 
 export async function getTemplatesByOwner(ownerId) {
   const result = await pool.query(
-    `SELECT t.${TPL_COLS.split(', ').map(c => 't.' + c).join(', ')},
+    `SELECT t.id, t.owner_id, t.template_name, t.bedrooms, t.bathrooms, t.kitchens,
+            t.daily_rate, t.monthly_rate, t.yearly_rate, t.room_prefix, t.notes, t.created_at, t.updated_at,
             COUNT(r.id)::int AS room_count
      FROM room_templates t
      LEFT JOIN rooms r ON r.template_id = t.id
@@ -98,7 +102,10 @@ export async function updateTemplate(id, data) {
   const fields = [], values = [];
   let idx = 1;
   for (const f of allowed) {
-    if (data[f] !== undefined) { fields.push(`${f} = $${idx++}`); values.push(data[f]); }
+    if (data[f] !== undefined) {
+      fields.push(`${f} = $${idx++}`);
+      values.push(data[f]);
+    }
   }
   if (!fields.length) return getTemplateById(id);
   fields.push('updated_at = NOW()');
@@ -116,7 +123,6 @@ export async function removeTemplate(id) {
   if (!result.rows.length) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Template not found');
 }
 
-// Sync template prices to all rooms using this template
 export async function syncTemplatePrices(templateId) {
   const tpl = await getTemplateById(templateId);
   const result = await pool.query(
@@ -127,7 +133,6 @@ export async function syncTemplatePrices(templateId) {
   return { updated: result.rowCount, template: tpl };
 }
 
-// Batch create rooms from template
 export async function batchCreateRooms(templateId, { count, start_number, name_cn_prefix, name_en_prefix, room_type, status = 'active' }) {
   const tpl = await getTemplateById(templateId);
   const created = [];

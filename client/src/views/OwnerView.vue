@@ -18,6 +18,7 @@
             <div class="owner-meta">
               <span v-if="owner.phone">📞 {{ owner.phone }}</span>
               <span v-if="owner.wechat">💬 {{ owner.wechat }}</span>
+              <span v-for="c in (owner.contacts || [])" :key="c.type + c.value" class="contact-chip">{{ c.type }}: {{ c.value }}</span>
               <span v-if="owner.management_fee_rate > 0">管理费 {{ owner.management_fee_rate }}%</span>
             </div>
           </div>
@@ -78,12 +79,27 @@
           <FormField :label="t('owner.name')" required>
             <input v-model="ownerForm.name" class="form-input" required />
           </FormField>
+          <FormField :label="t('owner.nameEn')">
+            <input v-model="ownerForm.name_en" class="form-input" />
+          </FormField>
           <FormField :label="t('owner.phone')">
             <input v-model="ownerForm.phone" class="form-input" />
           </FormField>
           <FormField :label="t('owner.wechat')">
             <input v-model="ownerForm.wechat" class="form-input" />
           </FormField>
+          <!-- 其他联系方式 -->
+          <div class="contacts-section">
+            <div class="contacts-label">{{ t('owner.otherContacts') }}</div>
+            <div v-for="(c, idx) in ownerForm.contacts" :key="idx" class="contact-row">
+              <select v-model="c.type" class="form-select contact-type">
+                <option v-for="ct in CONTACT_TYPES" :key="ct" :value="ct">{{ ct }}</option>
+              </select>
+              <input v-model="c.value" class="form-input contact-value" :placeholder="t('owner.contactAccount')" />
+              <button type="button" class="btn btn-sm btn-danger contact-remove" @click="removeContact(idx)">✕</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline" @click="addContact">+ {{ t('owner.addContact') }}</button>
+          </div>
           <FormField :label="t('owner.managementFeeRate')">
             <input v-model.number="ownerForm.management_fee_rate" type="number" step="0.1" min="0" max="100" class="form-input" />
           </FormField>
@@ -221,7 +237,16 @@ const loadingTemplates = ref(false);
 const showOwnerForm = ref(false);
 const editingOwner = ref(null);
 const deletingOwner = ref(null);
-const ownerForm = reactive({ name: '', phone: '', wechat: '', notes: '', management_fee_rate: 0 });
+const ownerForm = reactive({ name: '', name_en: '', phone: '', wechat: '', contacts: [], notes: '', management_fee_rate: 0 });
+
+const CONTACT_TYPES = ['WeChat', 'Line', 'Facebook', 'WhatsApp', 'Telegram', 'Phone', 'Email', 'Other'];
+
+function addContact() {
+  ownerForm.contacts.push({ type: 'Line', value: '' });
+}
+function removeContact(idx) {
+  ownerForm.contacts.splice(idx, 1);
+}
 
 // Template form
 const showTemplateForm = ref(false);
@@ -255,8 +280,8 @@ async function toggleTemplates(owner) {
 
 function openOwnerForm(o) {
   editingOwner.value = o;
-  if (o) { ownerForm.name = o.name; ownerForm.phone = o.phone || ''; ownerForm.wechat = o.wechat || ''; ownerForm.notes = o.notes || ''; ownerForm.management_fee_rate = o.management_fee_rate; }
-  else { ownerForm.name = ''; ownerForm.phone = ''; ownerForm.wechat = ''; ownerForm.notes = ''; ownerForm.management_fee_rate = 0; }
+  if (o) { ownerForm.name = o.name; ownerForm.name_en = o.name_en || ''; ownerForm.phone = o.phone || ''; ownerForm.wechat = o.wechat || ''; ownerForm.contacts = Array.isArray(o.contacts) ? JSON.parse(JSON.stringify(o.contacts)) : []; ownerForm.notes = o.notes || ''; ownerForm.management_fee_rate = o.management_fee_rate; }
+  else { ownerForm.name = ''; ownerForm.name_en = ''; ownerForm.phone = ''; ownerForm.wechat = ''; ownerForm.contacts = []; ownerForm.notes = ''; ownerForm.management_fee_rate = 0; }
   showOwnerForm.value = true;
 }
 
@@ -389,4 +414,12 @@ onMounted(fetchOwners);
 .btn-danger { background: #ef4444; color: #fff; border: none; }
 .btn-danger:hover { background: #dc2626; }
 .loading-text, .empty-text { padding: 2rem; text-align: center; color: var(--color-text-secondary, #6b7280); }
+
+.contacts-section { margin-bottom: 0.75rem; }
+.contacts-label { font-size: 0.875rem; font-weight: 500; color: var(--color-text-secondary, #6b7280); margin-bottom: 0.5rem; }
+.contact-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+.contact-type { width: 130px; flex-shrink: 0; }
+.contact-value { flex: 1; }
+.contact-remove { flex-shrink: 0; padding: 0.25rem 0.5rem; }
+.contact-chip { background: #f0fdf4; color: #166534; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.75rem; }
 </style>

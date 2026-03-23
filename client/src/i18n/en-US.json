@@ -288,6 +288,7 @@
     "addOwner": "Add Owner",
     "editOwner": "Edit Owner",
     "name": "Owner Name",
+    "nameEn": "English Name",
     "phone": "Phone",
     "wechat": "WeChat",
     "notes": "Notes",
@@ -318,6 +319,9 @@
     "preview": "Preview",
     "createRooms": "Create {count} Rooms",
     "batchSuccess": "Successfully created {count} rooms",
+    "otherContacts": "Other Contacts",
+    "addContact": "Add Contact",
+    "contactAccount": "Account / ID",
     "owner": "Owner",
     "template": "Room Template"
   }
