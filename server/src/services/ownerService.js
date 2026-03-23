@@ -175,3 +175,26 @@ export async function getRoomsByTemplate(templateId) {
   );
   return result.rows;
 }
+
+// Get unassigned rooms (no template_id) for an owner
+export async function getUnassignedRoomsByOwner(ownerId) {
+  const result = await pool.query(
+    `SELECT id, room_name_cn, room_name_en, room_type, base_daily_rate, status
+     FROM rooms WHERE owner_id = $1 AND template_id IS NULL ORDER BY id`,
+    [ownerId]
+  );
+  return result.rows;
+}
+
+// Batch assign rooms to a template
+export async function assignRoomsToTemplate(templateId, roomIds) {
+  if (!roomIds.length) return { updated: 0 };
+  const tpl = await getTemplateById(templateId);
+  const placeholders = roomIds.map((_, i) => `$${i + 3}`).join(', ');
+  const result = await pool.query(
+    `UPDATE rooms SET template_id = $1, room_type = $2, updated_at = NOW()
+     WHERE id IN (${placeholders}) RETURNING id`,
+    [templateId, tpl.project_type || 'apartment', ...roomIds]
+  );
+  return { updated: result.rowCount };
+}

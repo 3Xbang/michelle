@@ -59,6 +59,7 @@
               </div>
               <div class="template-actions">
                 <button class="btn btn-sm btn-primary" @click="syncPrices(tpl)" :disabled="tpl.room_count === 0">{{ t('owner.syncPrices') }}</button>
+                <button class="btn btn-sm btn-outline" @click="openAssignRooms(owner.id, tpl)">{{ t('owner.assignRooms') }}</button>
                 <button class="btn btn-sm btn-outline" @click="openTemplateForm(owner.id, tpl)">{{ t('common.edit') }}</button>
                 <button class="btn btn-sm btn-danger" @click="confirmDeleteTemplate(tpl)">{{ t('common.delete') }}</button>
               </div>
@@ -193,6 +194,37 @@
       @confirm="handleDeleteOwner" @cancel="deletingOwner = null" />
     <ConfirmDialog :visible="!!deletingTemplate" :title="t('common.confirmDelete')" :message="deletingTemplate?.template_name"
       @confirm="handleDeleteTemplate" @cancel="deletingTemplate = null" />
+
+    <!-- Assign Rooms Modal -->
+    <div v-if="showAssignRooms" class="modal-overlay" @click.self="showAssignRooms = false">
+      <div class="modal-content card">
+        <h2 class="modal-title">{{ t('owner.assignRooms') }} — {{ assigningTemplate?.template_name }}</h2>
+        <div v-if="loadingUnassigned" class="loading-text">{{ t('common.loading') }}</div>
+        <div v-else-if="unassignedRooms.length === 0" class="empty-text">{{ t('owner.noUnassignedRooms') }}</div>
+        <div v-else>
+          <div class="assign-hint">{{ t('owner.assignRoomsHint') }}</div>
+          <div class="assign-list">
+            <label v-for="room in unassignedRooms" :key="room.id" class="assign-row">
+              <input type="checkbox" :value="room.id" v-model="selectedRoomIds" class="assign-check" />
+              <span class="assign-room-name">{{ room.room_name_cn }}</span>
+              <span v-if="room.room_name_en" class="assign-room-en">{{ room.room_name_en }}</span>
+              <span class="assign-room-rate">¥{{ Number(room.base_daily_rate).toLocaleString() }}/日</span>
+            </label>
+          </div>
+          <div class="assign-select-all">
+            <button type="button" class="btn btn-sm btn-outline" @click="toggleSelectAll">
+              {{ selectedRoomIds.length === unassignedRooms.length ? t('common.deselectAll') : t('common.selectAll') }}
+            </button>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" :disabled="!selectedRoomIds.length || submitting" @click="submitAssignRooms">
+            {{ submitting ? t('common.loading') : t('owner.confirmAssign', { count: selectedRoomIds.length }) }}
+          </button>
+          <button class="btn btn-outline" @click="showAssignRooms = false">{{ t('common.cancel') }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -369,6 +401,47 @@ async function syncPrices(tpl) {
   } catch (e) { toast.error(e.response?.data?.message || t('error.unknown')); }
 }
 
+// Assign rooms
+const showAssignRooms = ref(false);
+const assigningTemplate = ref(null);
+const assigningOwnerId = ref(null);
+const unassignedRooms = ref([]);
+const selectedRoomIds = ref([]);
+const loadingUnassigned = ref(false);
+
+async function openAssignRooms(ownerId, tpl) {
+  assigningTemplate.value = tpl;
+  assigningOwnerId.value = ownerId;
+  selectedRoomIds.value = [];
+  showAssignRooms.value = true;
+  loadingUnassigned.value = true;
+  try {
+    unassignedRooms.value = (await apiClient.get(`/owners/${ownerId}/unassigned-rooms`)).data;
+  } catch { unassignedRooms.value = []; }
+  finally { loadingUnassigned.value = false; }
+}
+
+function toggleSelectAll() {
+  if (selectedRoomIds.value.length === unassignedRooms.value.length) {
+    selectedRoomIds.value = [];
+  } else {
+    selectedRoomIds.value = unassignedRooms.value.map(r => r.id);
+  }
+}
+
+async function submitAssignRooms() {
+  if (!selectedRoomIds.value.length) return;
+  submitting.value = true;
+  try {
+    const res = (await apiClient.post(`/owners/templates/${assigningTemplate.value.id}/assign-rooms`, { room_ids: selectedRoomIds.value })).data;
+    toast.success(t('owner.assignSuccess', { count: res.updated }));
+    showAssignRooms.value = false;
+    await reloadTemplates(assigningOwnerId.value);
+    fetchOwners();
+  } catch (e) { toast.error(e.response?.data?.message || t('error.unknown')); }
+  finally { submitting.value = false; }
+}
+
 function formatNum(v) {
   if (!v) return '0';
   return Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -434,4 +507,15 @@ onMounted(fetchOwners);
 .room-numbers-hint { font-size: 0.75rem; color: var(--color-text-secondary, #6b7280); margin-bottom: 0.5rem; }
 .room-number-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.375rem; }
 .room-number-index { min-width: 1.5rem; text-align: right; font-size: 0.8125rem; color: #9ca3af; }
+
+/* Assign rooms */
+.assign-hint { font-size: 0.8125rem; color: #6b7280; margin-bottom: 0.75rem; }
+.assign-list { display: flex; flex-direction: column; gap: 0.375rem; max-height: 320px; overflow-y: auto; margin-bottom: 0.75rem; }
+.assign-row { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.625rem; border-radius: 8px; cursor: pointer; }
+.assign-row:hover { background: #f3f4f6; }
+.assign-check { width: 1rem; height: 1rem; flex-shrink: 0; cursor: pointer; }
+.assign-room-name { font-weight: 600; font-size: 0.9375rem; flex: 1; }
+.assign-room-en { font-size: 0.8125rem; color: #9ca3af; }
+.assign-room-rate { font-size: 0.8125rem; color: #2563eb; font-weight: 600; white-space: nowrap; }
+.assign-select-all { margin-bottom: 0.5rem; }
 </style>

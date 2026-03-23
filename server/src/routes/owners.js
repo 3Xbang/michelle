@@ -54,4 +54,14 @@ router.get('/templates/:tid/rooms', async (req, res, next) => {
   try { res.json(await ownerService.getRoomsByTemplate(req.params.tid)); } catch (e) { next(e); }
 });
 
+// Get unassigned rooms (no template) for an owner
+router.get('/:id/unassigned-rooms', async (req, res, next) => {
+  try { res.json(await ownerService.getUnassignedRoomsByOwner(req.params.id)); } catch (e) { next(e); }
+});
+
+// Batch assign rooms to a template
+router.post('/templates/:tid/assign-rooms', async (req, res, next) => {
+  try { res.json(await ownerService.assignRoomsToTemplate(req.params.tid, req.body.room_ids || [])); } catch (e) { next(e); }
+});
+
 export default router;
