@@ -37,7 +37,7 @@ export async function update(id, data) {
   let idx = 1;
   for (const f of allowed) {
     if (data[f] !== undefined) {
-      fields.push(`${f} = $${idx++}`);
+      fields.push(f + ' = $' + idx++);
       values.push(f === 'contacts' ? JSON.stringify(data[f]) : data[f]);
     }
   }
@@ -45,7 +45,7 @@ export async function update(id, data) {
   fields.push('updated_at = NOW()');
   values.push(id);
   const result = await pool.query(
-    `UPDATE owners SET ${fields.join(', ')} WHERE id = $${idx} RETURNING ${OWNER_COLS}`,
+    'UPDATE owners SET ' + fields.join(', ') + ' WHERE id = $' + idx + ' RETURNING ' + OWNER_COLS,
     values
   );
   if (!result.rows.length) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Owner not found');
@@ -76,22 +76,25 @@ export async function getTemplatesByOwner(ownerId) {
 }
 
 export async function getTemplateById(id) {
-  const result = await pool.query(`SELECT ${TPL_COLS} FROM room_templates WHERE id = $1`, [id]);
+  const result = await pool.query('SELECT ' + TPL_COLS + ' FROM room_templates WHERE id = $1', [id]);
   if (!result.rows.length) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Template not found');
   return result.rows[0];
 }
 
-function toNum(val, fallback = 0) {
+function toNum(val, fallback) {
+  if (fallback === undefined) fallback = 0;
   if (val === '' || val === null || val === undefined) return fallback;
   const n = Number(val);
   return isNaN(n) ? fallback : n;
 }
 
 export async function createTemplate(data) {
-  const {
-    owner_id, template_name, project_name = null, project_name_en = null, project_type = 'apartment',
-    notes = null
-  } = data;
+  const owner_id = data.owner_id;
+  const template_name = data.template_name;
+  const project_name = data.project_name || null;
+  const project_name_en = data.project_name_en || null;
+  const project_type = data.project_type || 'apartment';
+  const notes = data.notes || null;
   const bedrooms = toNum(data.bedrooms, 1);
   const bathrooms = toNum(data.bathrooms, 1);
   const kitchens = toNum(data.kitchens, 0);
@@ -99,8 +102,7 @@ export async function createTemplate(data) {
   const monthly_rate = toNum(data.monthly_rate, 0);
   const yearly_rate = toNum(data.yearly_rate, 0);
   const result = await pool.query(
-    `INSERT INTO room_templates (owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ${TPL_COLS}`,
+    'INSERT INTO room_templates (owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ' + TPL_COLS,
     [owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes]
   );
   return result.rows[0];
@@ -114,7 +116,7 @@ export async function updateTemplate(id, data) {
   for (const f of allowed) {
     if (data[f] !== undefined) {
       const val = numericFields.includes(f) ? toNum(data[f]) : data[f];
-      fields.push(`${f} = $${idx++}`);
+      fields.push(f + ' = $' + idx++);
       values.push(val);
     }
   }
@@ -122,7 +124,7 @@ export async function updateTemplate(id, data) {
   fields.push('updated_at = NOW()');
   values.push(id);
   const result = await pool.query(
-    `UPDATE room_templates SET ${fields.join(', ')} WHERE id = $${idx} RETURNING ${TPL_COLS}`,
+    'UPDATE room_templates SET ' + fields.join(', ') + ' WHERE id = $' + idx + ' RETURNING ' + TPL_COLS,
     values
   );
   if (!result.rows.length) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Template not found');
@@ -137,7 +139,7 @@ export async function removeTemplate(id) {
 export async function syncTemplatePrices(templateId) {
   const tpl = await getTemplateById(templateId);
   const result = await pool.query(
-    `UPDATE rooms SET base_daily_rate = $1, updated_at = NOW() WHERE template_id = $2 RETURNING id`,
+    'UPDATE rooms SET base_daily_rate = $1, updated_at = NOW() WHERE template_id = $2 RETURNING id',
     [tpl.daily_rate, templateId]
   );
   return { updated: result.rowCount, template: tpl };
@@ -145,20 +147,19 @@ export async function syncTemplatePrices(templateId) {
 
 export async function syncTemplateRooms(templateId, roomNumbers) {
   const tpl = await getTemplateById(templateId);
-  // daily_rate must satisfy check constraint (>= 0), use 0 as safe default
   const safeRate = toNum(tpl.daily_rate, 0);
   const created = [];
   for (const item of roomNumbers) {
-    const { name_cn, name_en } = item;
+    const name_cn = item.name_cn;
+    const name_en = item.name_en;
     if (!name_cn) continue;
     const existing = await pool.query(
-      `SELECT id FROM rooms WHERE template_id = $1 AND room_name_cn = $2`,
+      'SELECT id FROM rooms WHERE template_id = $1 AND room_name_cn = $2',
       [templateId, name_cn]
     );
     if (existing.rows.length === 0) {
       const r = await pool.query(
-        `INSERT INTO rooms (room_name_cn, room_name_en, room_type, base_daily_rate, status, owner_id, template_id)
-         VALUES ($1,$2,$3,$4,'active',$5,$6) RETURNING id, room_name_cn, room_name_en`,
+        "INSERT INTO rooms (room_name_cn, room_name_en, room_type, base_daily_rate, status, owner_id, template_id) VALUES ($1,$2,$3,$4,'active',$5,$6) RETURNING id, room_name_cn, room_name_en",
         [name_cn, name_en || name_cn, tpl.project_type || 'apartment', safeRate, tpl.owner_id, templateId]
       );
       created.push(r.rows[0]);
@@ -169,32 +170,27 @@ export async function syncTemplateRooms(templateId, roomNumbers) {
 
 export async function getRoomsByTemplate(templateId) {
   const result = await pool.query(
-    `SELECT id, room_name_cn, room_name_en, room_type, base_daily_rate, status
-     FROM rooms WHERE template_id = $1 ORDER BY id`,
+    'SELECT id, room_name_cn, room_name_en, room_type, base_daily_rate, status FROM rooms WHERE template_id = $1 ORDER BY id',
     [templateId]
   );
   return result.rows;
 }
 
-// Get unassigned rooms (no template_id) for an owner
 export async function getUnassignedRoomsByOwner(ownerId) {
   const result = await pool.query(
-    `SELECT id, room_name_cn, room_name_en, room_type, base_daily_rate, status
-     FROM rooms WHERE owner_id = $1 AND template_id IS NULL ORDER BY id`,
+    'SELECT id, room_name_cn, room_name_en, room_type, base_daily_rate, status FROM rooms WHERE owner_id = $1 AND template_id IS NULL ORDER BY id',
     [ownerId]
   );
   return result.rows;
 }
 
-// Batch assign rooms to a template
 export async function assignRoomsToTemplate(templateId, roomIds) {
   if (!roomIds.length) return { updated: 0 };
   const tpl = await getTemplateById(templateId);
-  const placeholders = roomIds.map((_, i) => `$${i + 3}`).join(', ');
+  const placeholders = roomIds.map(function(_, i) { return '$' + (i + 3); }).join(', ');
   const result = await pool.query(
-    `UPDATE rooms SET template_id = $1, room_type = $2, updated_at = NOW()
-     WHERE id IN (${placeholders}) RETURNING id`,
-    [templateId, tpl.project_type || 'apartment', ...roomIds]
+    'UPDATE rooms SET template_id = $1, room_type = $2, updated_at = NOW() WHERE id IN (' + placeholders + ') RETURNING id',
+    [templateId, tpl.project_type || 'apartment'].concat(roomIds)
   );
   return { updated: result.rowCount };
 }
