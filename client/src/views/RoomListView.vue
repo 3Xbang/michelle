@@ -2,7 +2,7 @@
   <div>
     <div class="page-header">
       <h1 class="page-title">{{ t('room.title') }}</h1>
-      <button v-if="isDesktop" class="btn btn-primary btn-icon" @click="$router.push('/rooms/new')">
+      <button v-if="isDesktop && authStore.isAdmin" class="btn btn-primary btn-icon" @click="$router.push('/rooms/new')">
         <SvgIcon name="plus" :size="18" />
         {{ t('room.createTitle') }}
       </button>
@@ -45,7 +45,7 @@
             </span>
           </template>
           <template #cell-actions="{ row }">
-            <div class="action-btns">
+            <div v-if="authStore.isAdmin" class="action-btns">
               <router-link :to="`/rooms/${row.id}`" class="btn btn-sm btn-outline">{{ t('common.edit') }}</router-link>
               <button class="btn btn-sm btn-danger" @click="confirmDelete(row)">{{ t('common.delete') }}</button>
             </div>
@@ -55,7 +55,7 @@
     </div>
 
     <!-- Mobile create button -->
-    <div v-if="!isDesktop" class="mobile-create-bar">
+    <div v-if="!isDesktop && authStore.isAdmin" class="mobile-create-bar">
       <button class="btn btn-primary mobile-create-btn btn-icon" @click="$router.push('/rooms/new')">
         <SvgIcon name="plus" :size="18" />
         {{ t('room.createTitle') }}
@@ -76,6 +76,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoomStore } from '../stores/room.js';
+import { useAuthStore } from '../stores/auth.js';
 import { useMediaQuery } from '../composables/useMediaQuery.js';
 import { useToast } from '../composables/useToast.js';
 import DataTable from '../components/common/DataTable.vue';
@@ -86,6 +87,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog.vue';
 
 const { t } = useI18n();
 const store = useRoomStore();
+const authStore = useAuthStore();
 const isDesktop = useMediaQuery('(min-width: 768px)');
 const toast = useToast();
 

@@ -2,7 +2,7 @@
   <div>
     <div class="page-header">
       <h1 class="page-title">{{ t('user.title') }}</h1>
-      <button v-if="isDesktop" class="btn btn-primary btn-icon" @click="openForm(null)">
+      <button v-if="isDesktop && authStore.isAdmin" class="btn btn-primary btn-icon" @click="openForm(null)">
         <SvgIcon name="plus" :size="18" />
         {{ t('user.createTitle') }}
       </button>
@@ -29,7 +29,7 @@
             </span>
           </template>
           <template #cell-actions="{ row }">
-            <div class="action-btns">
+            <div v-if="authStore.isAdmin" class="action-btns">
               <button class="btn btn-sm btn-outline" @click="openForm(row)">{{ t('common.edit') }}</button>
               <button class="btn btn-sm btn-danger" @click="confirmDelete(row)">{{ t('common.delete') }}</button>
             </div>
@@ -39,7 +39,7 @@
     </div>
 
     <!-- Mobile: create user button at bottom of list -->
-    <div v-if="!isDesktop" class="mobile-create-bar">
+    <div v-if="!isDesktop && authStore.isAdmin" class="mobile-create-bar">
       <button class="btn btn-primary mobile-create-btn btn-icon" @click="openForm(null)">
         <SvgIcon name="plus" :size="18" />
         {{ t('user.createTitle') }}
@@ -110,6 +110,7 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '../composables/useToast.js';
 import { useMediaQuery } from '../composables/useMediaQuery.js';
+import { useAuthStore } from '../stores/auth.js';
 import { useValidation, required as requiredRule } from '../composables/useValidation.js';
 import apiClient from '../api/client.js';
 import FormField from '../components/common/FormField.vue';
@@ -121,6 +122,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog.vue';
 const { t } = useI18n();
 const toast = useToast();
 const isDesktop = useMediaQuery('(min-width: 768px)');
+const authStore = useAuthStore();
 
 const users = ref([]);
 const loading = ref(false);
