@@ -72,4 +72,17 @@ router.put(
   },
 );
 
+/**
+ * DELETE /api/rooms/:id
+ * Admin only - delete a room.
+ */
+router.delete('/:id', authorize('Admin'), async (req, res, next) => {
+  try {
+    await roomService.remove(req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

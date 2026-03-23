@@ -88,3 +88,14 @@ export async function update(id, data) {
   }
   return result.rows[0];
 }
+
+/**
+ * Delete a room by ID.
+ * Throws RESOURCE_NOT_FOUND (404) if room not found.
+ */
+export async function remove(id) {
+  const result = await pool.query('DELETE FROM rooms WHERE id = $1 RETURNING id', [id]);
+  if (result.rows.length === 0) {
+    throw new AppError('RESOURCE_NOT_FOUND', 404, 'Room not found');
+  }
+}

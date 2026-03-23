@@ -33,6 +33,11 @@ export const useRoomStore = defineStore('room', () => {
     return data;
   }
 
+  async function deleteRoom(id) {
+    await apiClient.delete(`/rooms/${id}`);
+    rooms.value = rooms.value.filter(r => r.id !== id);
+  }
+
   return {
     rooms,
     loading,
@@ -40,5 +45,6 @@ export const useRoomStore = defineStore('room', () => {
     getRoom,
     createRoom,
     updateRoom,
+    deleteRoom,
   };
 });

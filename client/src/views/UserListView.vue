@@ -28,6 +28,12 @@
               {{ t('enum.userRole.' + row.role) }}
             </span>
           </template>
+          <template #cell-actions="{ row }">
+            <div class="action-btns">
+              <button class="btn btn-sm btn-outline" @click="openForm(row)">{{ t('common.edit') }}</button>
+              <button class="btn btn-sm btn-danger" @click="confirmDelete(row)">{{ t('common.delete') }}</button>
+            </div>
+          </template>
         </DataTable>
       </PullToRefresh>
     </div>
@@ -88,6 +94,14 @@
         </form>
       </div>
     </div>
+    <!-- Confirm Delete Dialog -->
+    <ConfirmDialog
+      :visible="!!deletingUser"
+      :title="t('common.confirmDelete')"
+      :message="deletingUser?.name"
+      @confirm="handleDelete"
+      @cancel="deletingUser = null"
+    />
   </div>
 </template>
 
@@ -102,6 +116,7 @@ import FormField from '../components/common/FormField.vue';
 import DataTable from '../components/common/DataTable.vue';
 import PullToRefresh from '../components/common/PullToRefresh.vue';
 import SvgIcon from '../components/icons/SvgIcon.vue';
+import ConfirmDialog from '../components/common/ConfirmDialog.vue';
 
 const { t } = useI18n();
 const toast = useToast();
@@ -112,6 +127,8 @@ const loading = ref(false);
 const showForm = ref(false);
 const editingUser = ref(null);
 const submitting = ref(false);
+const deletingUser = ref(null);
+const deleting = ref(false);
 
 const form = reactive({
   name: '',
@@ -128,6 +145,7 @@ const columns = computed(() => [
   { key: 'role', label: t('user.role') },
   { key: 'phone', label: t('user.phone') },
   { key: 'preferred_lang', label: t('user.preferredLang') },
+  { key: 'actions', label: '' },
 ]);
 
 const validationRules = computed(() => {
@@ -197,6 +215,25 @@ function handlePullRefresh() {
   fetchUsers();
 }
 
+function confirmDelete(user) {
+  deletingUser.value = user;
+}
+
+async function handleDelete() {
+  if (!deletingUser.value) return;
+  deleting.value = true;
+  try {
+    await apiClient.delete(`/users/${deletingUser.value.id}`);
+    toast.success(t('common.delete'));
+    deletingUser.value = null;
+    fetchUsers();
+  } catch (err) {
+    toast.error(err.response?.data?.message || t('error.unknown'));
+  } finally {
+    deleting.value = false;
+  }
+}
+
 async function handleSubmit() {
   let valid = true;
   for (const field of ['name', 'email', 'role']) {
@@ -257,6 +294,26 @@ onMounted(() => {
 
 .mobile-create-btn {
   width: 100%;
+}
+
+.action-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
 }
 
 /* Modal */

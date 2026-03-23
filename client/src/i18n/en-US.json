@@ -6,6 +6,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "confirm": "Confirm",
+    "confirmDelete": "Confirm Delete",
     "search": "Search",
     "filter": "Filter",
     "apply": "Apply",
@@ -94,6 +95,7 @@
   },
   "room": {
     "title": "Rooms",
+    "createTitle": "Create Room",
     "editTitle": "Edit Room",
     "nameCn": "Chinese Name",
     "nameEn": "English Name",

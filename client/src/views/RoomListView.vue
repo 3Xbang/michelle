@@ -2,6 +2,10 @@
   <div>
     <div class="page-header">
       <h1 class="page-title">{{ t('room.title') }}</h1>
+      <button v-if="isDesktop" class="btn btn-primary btn-icon" @click="$router.push('/rooms/new')">
+        <SvgIcon name="plus" :size="18" />
+        {{ t('room.createTitle') }}
+      </button>
     </div>
 
     <!-- Mobile Filter / Desktop Filter Bar -->
@@ -40,25 +44,53 @@
               {{ t('enum.roomStatus.' + row.status) }}
             </span>
           </template>
+          <template #cell-actions="{ row }">
+            <div class="action-btns">
+              <router-link :to="`/rooms/${row.id}`" class="btn btn-sm btn-outline">{{ t('common.edit') }}</router-link>
+              <button class="btn btn-sm btn-danger" @click="confirmDelete(row)">{{ t('common.delete') }}</button>
+            </div>
+          </template>
         </DataTable>
       </PullToRefresh>
     </div>
+
+    <!-- Mobile create button -->
+    <div v-if="!isDesktop" class="mobile-create-bar">
+      <button class="btn btn-primary mobile-create-btn btn-icon" @click="$router.push('/rooms/new')">
+        <SvgIcon name="plus" :size="18" />
+        {{ t('room.createTitle') }}
+      </button>
+    </div>
+
+    <ConfirmDialog
+      :visible="!!deletingRoom"
+      :title="t('common.confirmDelete')"
+      :message="deletingRoom?.room_name_cn"
+      @confirm="handleDelete"
+      @cancel="deletingRoom = null"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoomStore } from '../stores/room.js';
 import { useMediaQuery } from '../composables/useMediaQuery.js';
+import { useToast } from '../composables/useToast.js';
 import DataTable from '../components/common/DataTable.vue';
 import MobileFilter from '../components/common/MobileFilter.vue';
 import PullToRefresh from '../components/common/PullToRefresh.vue';
 import SvgIcon from '../components/icons/SvgIcon.vue';
+import ConfirmDialog from '../components/common/ConfirmDialog.vue';
 
 const { t } = useI18n();
 const store = useRoomStore();
 const isDesktop = useMediaQuery('(min-width: 768px)');
+const toast = useToast();
+
+const deletingRoom = ref(null);
+const deleting = ref(false);
 
 const filters = reactive({
   room_type: '',
@@ -71,6 +103,7 @@ const columns = computed(() => [
   { key: 'room_type', label: t('room.roomType') },
   { key: 'base_daily_rate', label: t('room.baseDailyRate') },
   { key: 'status', label: t('room.roomStatus') },
+  { key: 'actions', label: '' },
 ]);
 
 const filterFields = computed(() => [
@@ -156,6 +189,24 @@ function handlePullRefresh() {
   store.fetchRooms();
 }
 
+function confirmDelete(room) {
+  deletingRoom.value = room;
+}
+
+async function handleDelete() {
+  if (!deletingRoom.value) return;
+  deleting.value = true;
+  try {
+    await store.deleteRoom(deletingRoom.value.id);
+    toast.success(t('common.delete'));
+    deletingRoom.value = null;
+  } catch (err) {
+    toast.error(err.response?.data?.message || t('error.unknown'));
+  } finally {
+    deleting.value = false;
+  }
+}
+
 onMounted(() => {
   store.fetchRooms();
 });
@@ -179,5 +230,33 @@ onMounted(() => {
 }
 .link:hover {
   text-decoration: underline;
+}
+
+.mobile-create-bar {
+  margin-top: var(--spacing-md);
+}
+
+.mobile-create-btn {
+  width: 100%;
+}
+
+.action-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="page-title">{{ t('room.editTitle') }}</h1>
+    <h1 class="page-title">{{ route.params.id && route.params.id !== 'new' ? t('room.editTitle') : t('room.createTitle') }}</h1>
 
     <div class="card">
       <form @submit.prevent="handleSubmit" novalidate>

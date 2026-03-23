@@ -107,4 +107,17 @@ router.put(
   },
 );
 
+/**
+ * DELETE /api/users/:id
+ * Admin only - delete a user.
+ */
+router.delete('/:id', authorize('Admin'), async (req, res, next) => {
+  try {
+    await userService.remove(req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
