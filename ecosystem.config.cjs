@@ -1,0 +1,30 @@
+module.exports = {
+  apps: [
+    {
+      name: 'mira-villa',
+      script: './src/index.js',
+      cwd: '/var/www/mira/server',
+      instances: 1,
+      exec_mode: 'fork',
+      watch: false,
+      max_memory_restart: '300M',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 4000,
+        DB_HOST: 'localhost',
+        DB_PORT: 5432,
+        DB_NAME: 'mira_db',
+        DB_USER: 'mira',
+        DB_PASSWORD: 'Mira_pwk9Qk6liXb1rC',
+        JWT_SECRET: 'WQMmMlu7BCC39cWWY1DjkaFgo074ZUf4wcbtqRkZ',
+        JWT_EXPIRES_IN: '24h',
+        CORS_ORIGIN: 'https://hotel.miraa.asia',
+        UPLOAD_DIR: '/var/www/mira/uploads',
+        LOG_LEVEL: 'info',
+      },
+      error_file: '/var/log/mira/error.log',
+      out_file: '/var/log/mira/out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    },
+  ],
+};
