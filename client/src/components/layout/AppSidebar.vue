@@ -25,6 +25,7 @@ const allItems = [
   { to: '/tickets', label: 'nav.tickets' },
   { to: '/rooms', label: 'nav.rooms', admin: true },
   { to: '/channel', label: 'nav.channel', admin: true },
+  { to: '/owners', label: 'nav.owners', admin: true },
   { to: '/reports', label: 'nav.reports', admin: true },
   { to: '/config', label: 'nav.config', admin: true },
   { to: '/users', label: 'nav.users', admin: true },

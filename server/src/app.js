@@ -16,6 +16,7 @@ import configRoutes from './routes/config.js';
 import labelRoutes from './routes/labels.js';
 import platformRoutes from './routes/platforms.js';
 import agentRoutes from './routes/agents.js';
+import ownerRoutes from './routes/owners.js';
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/config', configRoutes);
 app.use('/api/labels', labelRoutes);
 app.use('/api/platforms', platformRoutes);
 app.use('/api/agents', agentRoutes);
+app.use('/api/owners', ownerRoutes);
 
 // Static file serving for uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

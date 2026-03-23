@@ -22,6 +22,20 @@
             </select>
           </FormField>
 
+          <FormField :label="t('owner.owner')">
+            <select v-model="form.owner_id" class="form-select">
+              <option value="">-- {{ t('common.none') }} --</option>
+              <option v-for="o in owners" :key="o.id" :value="o.id">{{ o.name }}</option>
+            </select>
+          </FormField>
+
+          <FormField :label="t('owner.template')">
+            <select v-model="form.template_id" class="form-select" :disabled="!form.owner_id || !templates.length">
+              <option value="">-- {{ t('common.none') }} --</option>
+              <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">{{ tpl.template_name }}</option>
+            </select>
+          </FormField>
+
           <FormField :label="t('room.baseDailyRate')" :error="errors.base_daily_rate" required>
             <input v-model.number="form.base_daily_rate" type="number" step="0.01" min="0" class="form-input" @blur="validate('base_daily_rate')" />
           </FormField>
@@ -49,12 +63,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useRoomStore } from '../stores/room.js';
 import { useToast } from '../composables/useToast.js';
 import { useValidation, required as requiredRule } from '../composables/useValidation.js';
+import apiClient from '../api/client.js';
 import FormField from '../components/common/FormField.vue';
 import SvgIcon from '../components/icons/SvgIcon.vue';
 
@@ -67,12 +82,16 @@ const toast = useToast();
 const roomTypes = ['villa', 'homestay', 'apartment'];
 const submitting = ref(false);
 const isActive = ref(true);
+const owners = ref([]);
+const templates = ref([]);
 
 const form = reactive({
   room_name_cn: '',
   room_name_en: '',
   room_type: '',
   base_daily_rate: '',
+  owner_id: '',
+  template_id: '',
 });
 
 function positiveNumber(message) {
@@ -108,6 +127,8 @@ async function handleSubmit() {
       room_type: form.room_type,
       base_daily_rate: Number(form.base_daily_rate),
       status: isActive.value ? 'active' : 'maintenance',
+      owner_id: form.owner_id || null,
+      template_id: form.template_id || null,
     };
 
     if (route.params.id && route.params.id !== 'new') {
@@ -134,14 +155,55 @@ async function loadRoom() {
     form.room_name_en = data.room_name_en;
     form.room_type = data.room_type;
     form.base_daily_rate = data.base_daily_rate;
+    form.owner_id = data.owner_id || '';
+    form.template_id = data.template_id || '';
     isActive.value = data.status === 'active';
+    // Load templates for the owner if set
+    if (data.owner_id) {
+      await loadTemplates(data.owner_id);
+    }
   } catch (err) {
     toast.error(err.response?.data?.message || t('error.notFound'));
     router.push('/rooms');
   }
 }
 
+async function loadOwners() {
+  try {
+    const res = await apiClient.get('/owners');
+    owners.value = res.data;
+  } catch {
+    owners.value = [];
+  }
+}
+
+async function loadTemplates(ownerId) {
+  if (!ownerId) { templates.value = []; return; }
+  try {
+    const res = await apiClient.get(`/owners/${ownerId}/templates`);
+    templates.value = res.data;
+  } catch {
+    templates.value = [];
+  }
+}
+
+// When owner changes, reload templates and clear template selection
+watch(() => form.owner_id, (newOwnerId) => {
+  form.template_id = '';
+  loadTemplates(newOwnerId);
+});
+
+// When template changes, auto-fill room_type and base_daily_rate
+watch(() => form.template_id, (newTplId) => {
+  if (!newTplId) return;
+  const tpl = templates.value.find(t => t.id === newTplId || t.id === Number(newTplId));
+  if (tpl) {
+    if (tpl.daily_rate) form.base_daily_rate = tpl.daily_rate;
+  }
+});
+
 onMounted(() => {
+  loadOwners();
   loadRoom();
 });
 </script>

@@ -24,6 +24,7 @@ const { t } = useI18n();
 const menuItems = [
   { to: '/rooms', icon: 'room', labelKey: 'nav.rooms' },
   { to: '/channel', icon: 'channel', labelKey: 'nav.channel' },
+  { to: '/owners', icon: 'users', labelKey: 'nav.owners' },
   { to: '/reports', icon: 'report', labelKey: 'nav.reports' },
   { to: '/config', icon: 'config', labelKey: 'nav.config' },
   { to: '/users', icon: 'users', labelKey: 'nav.users' },

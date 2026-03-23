@@ -32,6 +32,10 @@
           <template #cell-room_name_cn="{ row }">
             <router-link :to="`/rooms/${row.id}`" class="link">{{ row.room_name_cn }}</router-link>
           </template>
+          <template #cell-owner_name="{ row }">
+            <span class="owner-tag" v-if="row.owner_name">{{ row.owner_name }}</span>
+            <span v-else class="text-muted">—</span>
+          </template>
           <template #cell-room_type="{ row }">
             {{ t('enum.roomType.' + row.room_type) }}
           </template>
@@ -79,6 +83,7 @@ import { useRoomStore } from '../stores/room.js';
 import { useAuthStore } from '../stores/auth.js';
 import { useMediaQuery } from '../composables/useMediaQuery.js';
 import { useToast } from '../composables/useToast.js';
+import apiClient from '../api/client.js';
 import DataTable from '../components/common/DataTable.vue';
 import MobileFilter from '../components/common/MobileFilter.vue';
 import PullToRefresh from '../components/common/PullToRefresh.vue';
@@ -93,15 +98,18 @@ const toast = useToast();
 
 const deletingRoom = ref(null);
 const deleting = ref(false);
+const ownersList = ref([]);
 
 const filters = reactive({
   room_type: '',
   status: '',
+  owner_id: '',
 });
 
 const columns = computed(() => [
   { key: 'room_name_cn', label: t('room.nameCn') },
   { key: 'room_name_en', label: t('room.nameEn') },
+  { key: 'owner_name', label: t('owner.owner') },
   { key: 'room_type', label: t('room.roomType') },
   { key: 'base_daily_rate', label: t('room.baseDailyRate') },
   { key: 'status', label: t('room.roomStatus') },
@@ -109,6 +117,12 @@ const columns = computed(() => [
 ]);
 
 const filterFields = computed(() => [
+  {
+    key: 'owner_id',
+    label: t('owner.owner'),
+    type: 'select',
+    options: ownersList.value.map(o => ({ value: String(o.id), label: o.name }))
+  },
   {
     key: 'room_type',
     label: t('room.roomType'),
@@ -132,6 +146,7 @@ const filterFields = computed(() => [
 
 const activeFilterCount = computed(() => {
   let count = 0;
+  if (filters.owner_id) count++;
   if (filters.room_type) count++;
   if (filters.status) count++;
   return count;
@@ -140,6 +155,9 @@ const activeFilterCount = computed(() => {
 // Client-side filtering since rooms is a small list
 const filteredRooms = computed(() => {
   let result = store.rooms;
+  if (filters.owner_id) {
+    result = result.filter(r => String(r.owner_id) === String(filters.owner_id));
+  }
   if (filters.room_type) {
     result = result.filter(r => r.room_type === filters.room_type);
   }
@@ -181,11 +199,13 @@ function handleFilterApply(newFilters) {
 }
 
 function handleReset() {
+  filters.owner_id = '';
   filters.room_type = '';
   filters.status = '';
 }
 
 function handlePullRefresh() {
+  filters.owner_id = '';
   filters.room_type = '';
   filters.status = '';
   store.fetchRooms();
@@ -211,6 +231,7 @@ async function handleDelete() {
 
 onMounted(() => {
   store.fetchRooms();
+  apiClient.get('/owners').then(res => { ownersList.value = res.data; }).catch(() => {});
 });
 </script>
 
@@ -245,6 +266,20 @@ onMounted(() => {
 .action-btns {
   display: flex;
   gap: 0.5rem;
+}
+
+.owner-tag {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.text-muted {
+  color: var(--color-text-secondary, #9ca3af);
 }
 
 .btn-sm {
