@@ -34,9 +34,23 @@
         <span class="bc-sep">›</span>
         <span class="bc-cur">{{ selectedOwner.name }}</span>
       </div>
-      <div v-if="selectedOwner._noOwner" class="room-list-section">
-        <RoomCard v-for="room in noOwnerRooms" :key="room.id" :room="room"
-          :is-admin="authStore.isAdmin" @delete="confirmDelete" />
+      <div v-if="selectedOwner._noOwner" class="card-grid card-grid-room">
+        <div v-for="room in noOwnerRooms" :key="room.id"
+             class="tile tile-room" :class="'room-' + room.status">
+          <div class="room-tile-top">
+            <span class="room-status-dot" :class="'dot-' + room.status"></span>
+            <span class="room-status-badge" :class="'status-' + room.status">
+              {{ t('enum.roomStatus.' + room.status) }}
+            </span>
+          </div>
+          <div class="room-tile-name">{{ room.room_name_cn }}</div>
+          <div v-if="room.room_name_en" class="room-tile-en">{{ room.room_name_en }}</div>
+          <div class="room-tile-rate">¥{{ formatNum(room.base_daily_rate) }}<small>/日</small></div>
+          <div v-if="authStore.isAdmin" class="room-tile-actions">
+            <router-link :to="`/rooms/${room.id}`" class="btn btn-xs btn-outline">{{ t('common.edit') }}</router-link>
+            <button class="btn btn-xs btn-danger" @click.stop="confirmDelete(room)">{{ t('common.delete') }}</button>
+          </div>
+        </div>
       </div>
       <div v-else class="card-grid">
         <div v-for="tg in selectedOwner.typeGroups" :key="tg.type"
@@ -87,20 +101,34 @@
       </div>
     </template>
 
-    <!-- Level 4: Room list -->
+    <!-- Level 4: Room grid -->
     <template v-else-if="selectedTemplate">
       <div class="breadcrumb">
         <button class="bc-btn" @click="back(1)">{{ t('room.title') }}</button>
         <span class="bc-sep">›</span>
         <button class="bc-btn" @click="back(2)">{{ selectedOwner.name }}</button>
         <span class="bc-sep">›</span>
-        <button class="bc-btn" @click="back(3)">{{ t('enum.roomType.' + selectedType.type) }}</button>
+        <button class="bc-btn" @click="back(3)">{{ t('enum.roomType.' + selectedType?.type) }}</button>
         <span class="bc-sep">›</span>
         <span class="bc-cur">{{ selectedTemplate.project_name || selectedTemplate.template_name }}</span>
       </div>
-      <div class="room-list-section">
-        <RoomCard v-for="room in selectedTemplate.rooms" :key="room.id" :room="room"
-          :is-admin="authStore.isAdmin" @delete="confirmDelete" />
+      <div class="card-grid card-grid-room">
+        <div v-for="room in selectedTemplate.rooms" :key="room.id"
+             class="tile tile-room" :class="'room-' + room.status">
+          <div class="room-tile-top">
+            <span class="room-status-dot" :class="'dot-' + room.status"></span>
+            <span class="room-status-badge" :class="'status-' + room.status">
+              {{ t('enum.roomStatus.' + room.status) }}
+            </span>
+          </div>
+          <div class="room-tile-name">{{ room.room_name_cn }}</div>
+          <div v-if="room.room_name_en" class="room-tile-en">{{ room.room_name_en }}</div>
+          <div class="room-tile-rate">¥{{ formatNum(room.base_daily_rate) }}<small>/日</small></div>
+          <div v-if="authStore.isAdmin" class="room-tile-actions">
+            <router-link :to="`/rooms/${room.id}`" class="btn btn-xs btn-outline">{{ t('common.edit') }}</router-link>
+            <button class="btn btn-xs btn-danger" @click.stop="confirmDelete(room)">{{ t('common.delete') }}</button>
+          </div>
+        </div>
       </div>
     </template>
 
@@ -115,7 +143,7 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 import { useRoomStore } from '../stores/room.js';
@@ -129,31 +157,6 @@ const { t } = useI18n();
 const store = useRoomStore();
 const authStore = useAuthStore();
 const toast = useToast();
-
-// Inline RoomCard component
-const RoomCard = defineComponent({
-  props: { room: Object, isAdmin: Boolean },
-  emits: ['delete'],
-  setup(props, { emit }) {
-    return () => h('div', { class: 'room-card' }, [
-      h('div', { class: 'room-card-main' }, [
-        h('span', { class: 'room-dot dot-' + props.room.status }),
-        h('div', { class: 'room-card-info' }, [
-          h(RouterLink, { to: `/rooms/${props.room.id}`, class: 'room-name' }, () => props.room.room_name_cn),
-          h('span', { class: 'room-name-en' }, props.room.room_name_en),
-        ]),
-        h('span', { class: 'status-badge status-' + props.room.status },
-          t('enum.roomStatus.' + props.room.status)),
-        h('span', { class: 'room-rate' },
-          Number(props.room.base_daily_rate).toLocaleString(undefined, { minimumFractionDigits: 0 }) + '/日'),
-      ]),
-      props.isAdmin ? h('div', { class: 'room-card-actions' }, [
-        h(RouterLink, { to: `/rooms/${props.room.id}`, class: 'btn btn-sm btn-outline' }, () => t('common.edit')),
-        h('button', { class: 'btn btn-sm btn-danger', onClick: () => emit('delete', props.room) }, t('common.delete')),
-      ]) : null,
-    ]);
-  }
-});
 
 const loading = ref(false);
 const ownersList = ref([]);
@@ -352,36 +355,56 @@ onMounted(loadAll);
   border-radius: 999px; padding: 0.125rem 0.625rem;
 }
 
-/* Room list */
-.room-list-section { display: flex; flex-direction: column; gap: 0.625rem; }
-
-.room-card {
-  background: #fff; border-radius: 12px; padding: 0.875rem 1rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07); border: 1px solid #f3f4f6;
+/* Room grid */
+.card-grid-room {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
-.room-card-main {
-  display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
-}
-.room-card-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.125rem; }
-.room-card-actions { display: flex; gap: 0.5rem; margin-top: 0.625rem; padding-top: 0.625rem; border-top: 1px solid #f3f4f6; }
 
-.room-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tile-room {
+  background: #fff; border: 1.5px solid #e5e7eb;
+  align-items: flex-start; text-align: left; padding: 1rem;
+  min-height: 140px; cursor: default;
+}
+.tile-room:hover { transform: translateY(-1px); box-shadow: 0 3px 12px rgba(0,0,0,0.1); }
+
+/* Room status color themes */
+.room-active { background: linear-gradient(145deg, #f0fdf4 0%, #fff 60%); border-color: #86efac; }
+.room-maintenance { background: linear-gradient(145deg, #fefce8 0%, #fff 60%); border-color: #fde047; }
+
+.room-tile-top {
+  display: flex; align-items: center; gap: 0.375rem;
+  margin-bottom: 0.5rem; width: 100%;
+}
+.room-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
 .dot-active { background: #22c55e; }
 .dot-maintenance { background: #f59e0b; }
 
-.room-name { color: #2563eb; font-weight: 600; font-size: 1rem; text-decoration: none; }
-.room-name:hover { text-decoration: underline; }
-.room-name-en { color: #9ca3af; font-size: 0.8125rem; }
-.room-rate { font-size: 0.875rem; color: #374151; font-weight: 500; margin-left: auto; white-space: nowrap; }
-
-.status-badge {
-  font-size: 0.75rem; padding: 0.2rem 0.6rem;
-  border-radius: 999px; font-weight: 600; white-space: nowrap;
+.room-status-badge {
+  font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.4rem;
+  border-radius: 999px;
 }
 .status-active { background: #dcfce7; color: #166534; }
 .status-maintenance { background: #fef9c3; color: #854d0e; }
 
-.btn-sm { padding: 0.375rem 0.875rem; font-size: 0.875rem; border-radius: 8px; }
-.btn-danger { background: #ef4444; color: #fff; border: none; }
+.room-tile-name {
+  font-weight: 700; font-size: 0.9375rem; color: #111827;
+  line-height: 1.3; margin-bottom: 0.2rem;
+}
+.room-tile-en { font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.375rem; }
+.room-tile-rate {
+  font-size: 0.9375rem; font-weight: 800; color: #2563eb;
+  margin-top: auto; padding-top: 0.25rem;
+}
+.room-tile-rate small { font-size: 0.7rem; font-weight: 500; color: #6b7280; }
+
+.room-tile-actions {
+  display: flex; gap: 0.375rem; margin-top: 0.625rem;
+  padding-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.06);
+  width: 100%;
+}
+.btn-xs { padding: 0.25rem 0.625rem; font-size: 0.75rem; border-radius: 6px; }
+.btn-danger { background: #ef4444; color: #fff; border: none; cursor: pointer; }
 .btn-danger:hover { background: #dc2626; }
 </style>
