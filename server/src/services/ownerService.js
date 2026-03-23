@@ -16,9 +16,7 @@ export async function getAll() {
 }
 
 export async function getById(id) {
-  const result = await pool.query(
-    `SELECT ${OWNER_COLS} FROM owners WHERE id = $1`, [id]
-  );
+  const result = await pool.query(`SELECT ${OWNER_COLS} FROM owners WHERE id = $1`, [id]);
   if (!result.rows.length) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Owner not found');
   return result.rows[0];
 }
@@ -60,13 +58,13 @@ export async function remove(id) {
 }
 
 // --- Templates ---
-const TPL_COLS = 'id, owner_id, template_name, project_name, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes, created_at, updated_at';
+const TPL_COLS = 'id, owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes, created_at, updated_at';
 
 export async function getTemplatesByOwner(ownerId) {
   const result = await pool.query(
-    `SELECT t.id, t.owner_id, t.template_name, t.project_name, t.project_type,
+    `SELECT t.id, t.owner_id, t.template_name, t.project_name, t.project_name_en, t.project_type,
             t.bedrooms, t.bathrooms, t.kitchens,
-            t.daily_rate, t.monthly_rate, t.yearly_rate, t.room_prefix, t.notes, t.created_at, t.updated_at,
+            t.daily_rate, t.monthly_rate, t.yearly_rate, t.notes, t.created_at, t.updated_at,
             COUNT(r.id)::int AS room_count
      FROM room_templates t
      LEFT JOIN rooms r ON r.template_id = t.id
@@ -78,29 +76,27 @@ export async function getTemplatesByOwner(ownerId) {
 }
 
 export async function getTemplateById(id) {
-  const result = await pool.query(
-    `SELECT ${TPL_COLS} FROM room_templates WHERE id = $1`, [id]
-  );
+  const result = await pool.query(`SELECT ${TPL_COLS} FROM room_templates WHERE id = $1`, [id]);
   if (!result.rows.length) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Template not found');
   return result.rows[0];
 }
 
 export async function createTemplate(data) {
   const {
-    owner_id, template_name, project_name = null, project_type = 'apartment',
+    owner_id, template_name, project_name = null, project_name_en = null, project_type = 'apartment',
     bedrooms = 1, bathrooms = 1, kitchens = 0,
-    daily_rate = 0, monthly_rate = 0, yearly_rate = 0, room_prefix = null, notes = null
+    daily_rate = 0, monthly_rate = 0, yearly_rate = 0, notes = null
   } = data;
   const result = await pool.query(
-    `INSERT INTO room_templates (owner_id, template_name, project_name, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes)
+    `INSERT INTO room_templates (owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ${TPL_COLS}`,
-    [owner_id, template_name, project_name, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, room_prefix, notes]
+    [owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes]
   );
   return result.rows[0];
 }
 
 export async function updateTemplate(id, data) {
-  const allowed = ['template_name', 'project_name', 'project_type', 'bedrooms', 'bathrooms', 'kitchens', 'daily_rate', 'monthly_rate', 'yearly_rate', 'room_prefix', 'notes'];
+  const allowed = ['template_name', 'project_name', 'project_name_en', 'project_type', 'bedrooms', 'bathrooms', 'kitchens', 'daily_rate', 'monthly_rate', 'yearly_rate', 'notes'];
   const fields = [], values = [];
   let idx = 1;
   for (const f of allowed) {
@@ -128,26 +124,49 @@ export async function removeTemplate(id) {
 export async function syncTemplatePrices(templateId) {
   const tpl = await getTemplateById(templateId);
   const result = await pool.query(
-    `UPDATE rooms SET base_daily_rate = $1, updated_at = NOW()
-     WHERE template_id = $2 RETURNING id`,
+    `UPDATE rooms SET base_daily_rate = $1, updated_at = NOW() WHERE template_id = $2 RETURNING id`,
     [tpl.daily_rate, templateId]
   );
   return { updated: result.rowCount, template: tpl };
 }
 
-export async function batchCreateRooms(templateId, { count, start_number, name_cn_prefix, name_en_prefix, room_type, status = 'active' }) {
+/**
+ * Sync room list from template's room_numbers JSONB array.
+ * Each item: { name_cn, name_en }
+ * - Creates rooms that don't exist yet (matched by room_name_cn)
+ * - Does NOT delete existing rooms (safe)
+ */
+export async function syncTemplateRooms(templateId, roomNumbers) {
   const tpl = await getTemplateById(templateId);
   const created = [];
-  for (let i = 0; i < count; i++) {
-    const num = start_number + i;
-    const nameCn = `${name_cn_prefix || tpl.room_prefix || ''}${num}`;
-    const nameEn = `${name_en_prefix || tpl.room_prefix || ''}${num}`;
-    const r = await pool.query(
-      `INSERT INTO rooms (room_name_cn, room_name_en, room_type, base_daily_rate, status, owner_id, template_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, room_name_cn, room_name_en`,
-      [nameCn, nameEn, room_type || 'apartment', tpl.daily_rate, status, tpl.owner_id, templateId]
+  for (const item of roomNumbers) {
+    const { name_cn, name_en } = item;
+    if (!name_cn) continue;
+    // Check if room already exists for this template with same cn name
+    const existing = await pool.query(
+      `SELECT id FROM rooms WHERE template_id = $1 AND room_name_cn = $2`,
+      [templateId, name_cn]
     );
-    created.push(r.rows[0]);
+    if (existing.rows.length === 0) {
+      const r = await pool.query(
+        `INSERT INTO rooms (room_name_cn, room_name_en, room_type, base_daily_rate, status, owner_id, template_id)
+         VALUES ($1,$2,$3,$4,'active',$5,$6) RETURNING id, room_name_cn, room_name_en`,
+        [name_cn, name_en || name_cn, tpl.project_type || 'apartment', tpl.daily_rate, tpl.owner_id, templateId]
+      );
+      created.push(r.rows[0]);
+    }
   }
-  return created;
+  return { created: created.length, rooms: created };
+}
+
+/**
+ * Get all rooms belonging to a template
+ */
+export async function getRoomsByTemplate(templateId) {
+  const result = await pool.query(
+    `SELECT id, room_name_cn, room_name_en, room_type, base_daily_rate, status
+     FROM rooms WHERE template_id = $1 ORDER BY id`,
+    [templateId]
+  );
+  return result.rows;
 }

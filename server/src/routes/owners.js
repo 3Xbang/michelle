@@ -44,9 +44,14 @@ router.post('/templates/:tid/sync-prices', async (req, res, next) => {
   try { res.json(await ownerService.syncTemplatePrices(req.params.tid)); } catch (e) { next(e); }
 });
 
-// Batch create rooms from template
-router.post('/templates/:tid/batch-rooms', async (req, res, next) => {
-  try { res.status(201).json(await ownerService.batchCreateRooms(req.params.tid, req.body)); } catch (e) { next(e); }
+// Sync room list from template room_numbers
+router.post('/templates/:tid/sync-rooms', async (req, res, next) => {
+  try { res.json(await ownerService.syncTemplateRooms(req.params.tid, req.body.room_numbers || [])); } catch (e) { next(e); }
+});
+
+// Get rooms belonging to a template
+router.get('/templates/:tid/rooms', async (req, res, next) => {
+  try { res.json(await ownerService.getRoomsByTemplate(req.params.tid)); } catch (e) { next(e); }
 });
 
 export default router;
