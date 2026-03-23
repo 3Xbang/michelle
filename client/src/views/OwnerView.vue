@@ -64,7 +64,21 @@
                 </div>
                 <div class="template-specs">🛏 {{ tpl.bedrooms }} &nbsp; 🚿 {{ tpl.bathrooms }} &nbsp; 🍳 {{ tpl.kitchens }}</div>
                 <div class="template-prices">日 {{ formatNum(tpl.daily_rate) }} &nbsp; 月 {{ formatNum(tpl.monthly_rate) }} &nbsp; 年 {{ formatNum(tpl.yearly_rate) }}</div>
-                <div class="template-rooms">{{ tpl.room_count }} {{ t('owner.rooms') }}</div>
+                <div class="template-rooms" style="cursor:pointer" @click="toggleTemplateRooms(tpl)">
+                  {{ tpl.room_count }} {{ t('owner.rooms') }} {{ expandedTemplate === tpl.id ? '▲' : '▼' }}
+                </div>
+                <!-- 展开房间列表 -->
+                <div v-if="expandedTemplate === tpl.id" class="template-room-list">
+                  <div v-if="loadingTemplateRooms" class="loading-text" style="font-size:0.8rem">{{ t('common.loading') }}</div>
+                  <div v-else-if="!templateRooms[tpl.id]?.length" class="empty-text" style="font-size:0.8rem">暂无房间</div>
+                  <div v-else>
+                    <div v-for="room in templateRooms[tpl.id]" :key="room.id" class="template-room-item">
+                      <span class="room-dot">●</span>
+                      <span>{{ room.room_name_cn }}</span>
+                      <span v-if="room.room_name_en" class="room-name-en">/ {{ room.room_name_en }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="template-actions">
                 <button class="btn btn-sm btn-outline" @click="openPhotoManager(owner.id, tpl)">🖼 {{ t('owner.photos') }}</button>
@@ -520,6 +534,23 @@ async function syncPrices(tpl) {
   } catch (e) { toast.error(e.response?.data?.message || t('error.unknown')); }
 }
 
+// Template room expand
+const expandedTemplate = ref(null);
+const templateRooms = ref({});
+const loadingTemplateRooms = ref(false);
+
+async function toggleTemplateRooms(tpl) {
+  if (expandedTemplate.value === tpl.id) { expandedTemplate.value = null; return; }
+  expandedTemplate.value = tpl.id;
+  if (!templateRooms.value[tpl.id]) {
+    loadingTemplateRooms.value = true;
+    try {
+      templateRooms.value[tpl.id] = (await apiClient.get(`/owners/templates/${tpl.id}/rooms`)).data;
+    } catch { templateRooms.value[tpl.id] = []; }
+    finally { loadingTemplateRooms.value = false; }
+  }
+}
+
 // Assign rooms
 const showAssignRooms = ref(false);
 const assigningTemplate = ref(null);
@@ -589,6 +620,10 @@ onMounted(fetchOwners);
 .template-name { font-weight: 600; margin-bottom: 0.25rem; }
 .template-specs, .template-prices { font-size: 0.8125rem; color: var(--color-text-secondary, #6b7280); margin-bottom: 0.25rem; }
 .template-rooms { font-size: 0.75rem; color: var(--color-primary, #2563eb); font-weight: 600; }
+.template-room-list { margin-top: 0.5rem; padding: 0.5rem; background: #fff; border-radius: 6px; border: 1px solid #e5e7eb; }
+.template-room-item { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8rem; padding: 0.2rem 0; color: #374151; }
+.room-dot { color: var(--color-primary, #2563eb); font-size: 0.5rem; }
+.room-name-en { color: #9ca3af; }
 .template-info { flex: 1; min-width: 160px; }
 .template-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; align-items: flex-start; }
 .template-project { font-size: 0.8125rem; color: var(--color-text-secondary, #6b7280); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
