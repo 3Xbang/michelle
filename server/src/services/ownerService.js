@@ -81,12 +81,23 @@ export async function getTemplateById(id) {
   return result.rows[0];
 }
 
+function toNum(val, fallback = 0) {
+  if (val === '' || val === null || val === undefined) return fallback;
+  const n = Number(val);
+  return isNaN(n) ? fallback : n;
+}
+
 export async function createTemplate(data) {
   const {
     owner_id, template_name, project_name = null, project_name_en = null, project_type = 'apartment',
-    bedrooms = 1, bathrooms = 1, kitchens = 0,
-    daily_rate = 0, monthly_rate = 0, yearly_rate = 0, notes = null
+    notes = null
   } = data;
+  const bedrooms = toNum(data.bedrooms, 1);
+  const bathrooms = toNum(data.bathrooms, 1);
+  const kitchens = toNum(data.kitchens, 0);
+  const daily_rate = toNum(data.daily_rate, 0);
+  const monthly_rate = toNum(data.monthly_rate, 0);
+  const yearly_rate = toNum(data.yearly_rate, 0);
   const result = await pool.query(
     `INSERT INTO room_templates (owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ${TPL_COLS}`,
@@ -97,12 +108,14 @@ export async function createTemplate(data) {
 
 export async function updateTemplate(id, data) {
   const allowed = ['template_name', 'project_name', 'project_name_en', 'project_type', 'bedrooms', 'bathrooms', 'kitchens', 'daily_rate', 'monthly_rate', 'yearly_rate', 'notes'];
+  const numericFields = ['bedrooms', 'bathrooms', 'kitchens', 'daily_rate', 'monthly_rate', 'yearly_rate'];
   const fields = [], values = [];
   let idx = 1;
   for (const f of allowed) {
     if (data[f] !== undefined) {
+      const val = numericFields.includes(f) ? toNum(data[f]) : data[f];
       fields.push(`${f} = $${idx++}`);
-      values.push(data[f]);
+      values.push(val);
     }
   }
   if (!fields.length) return getTemplateById(id);
@@ -130,19 +143,14 @@ export async function syncTemplatePrices(templateId) {
   return { updated: result.rowCount, template: tpl };
 }
 
-/**
- * Sync room list from template's room_numbers JSONB array.
- * Each item: { name_cn, name_en }
- * - Creates rooms that don't exist yet (matched by room_name_cn)
- * - Does NOT delete existing rooms (safe)
- */
 export async function syncTemplateRooms(templateId, roomNumbers) {
   const tpl = await getTemplateById(templateId);
+  // daily_rate must satisfy check constraint (>= 0), use 0 as safe default
+  const safeRate = toNum(tpl.daily_rate, 0);
   const created = [];
   for (const item of roomNumbers) {
     const { name_cn, name_en } = item;
     if (!name_cn) continue;
-    // Check if room already exists for this template with same cn name
     const existing = await pool.query(
       `SELECT id FROM rooms WHERE template_id = $1 AND room_name_cn = $2`,
       [templateId, name_cn]
@@ -151,7 +159,7 @@ export async function syncTemplateRooms(templateId, roomNumbers) {
       const r = await pool.query(
         `INSERT INTO rooms (room_name_cn, room_name_en, room_type, base_daily_rate, status, owner_id, template_id)
          VALUES ($1,$2,$3,$4,'active',$5,$6) RETURNING id, room_name_cn, room_name_en`,
-        [name_cn, name_en || name_cn, tpl.project_type || 'apartment', tpl.daily_rate, tpl.owner_id, templateId]
+        [name_cn, name_en || name_cn, tpl.project_type || 'apartment', safeRate, tpl.owner_id, templateId]
       );
       created.push(r.rows[0]);
     }
@@ -159,9 +167,6 @@ export async function syncTemplateRooms(templateId, roomNumbers) {
   return { created: created.length, rooms: created };
 }
 
-/**
- * Get all rooms belonging to a template
- */
 export async function getRoomsByTemplate(templateId) {
   const result = await pool.query(
     `SELECT id, room_name_cn, room_name_en, room_type, base_daily_rate, status
