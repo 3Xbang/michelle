@@ -25,6 +25,7 @@ const routes = [
       { path: 'reports', name: 'Reports', component: () => import('../views/ReportView.vue'), meta: { role: 'Admin' } },
       { path: 'config', name: 'Config', component: () => import('../views/ConfigView.vue'), meta: { role: 'Admin' } },
       { path: 'users', name: 'UserList', component: () => import('../views/UserListView.vue'), meta: { role: 'Admin' } },
+      { path: 'channel', name: 'Channel', component: () => import('../views/ChannelView.vue'), meta: { role: 'Admin' } },
       { path: 'profile', name: 'Profile', component: () => import('../views/ProfileView.vue') },
       { path: 'more', name: 'MoreMenu', component: () => import('../views/MoreMenuView.vue'), meta: { role: 'Admin' } },
     ],

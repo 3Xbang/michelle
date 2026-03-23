@@ -40,31 +40,69 @@
             </select>
           </FormField>
 
-          <!-- Platform Source -->
-          <FormField :label="t('booking.platformSource')" :error="errors.platform_source" required>
-            <select v-model="form.platform_source" class="form-select" @blur="validate('platform_source')">
-              <option value="">--</option>
-              <option v-for="p in platforms" :key="p" :value="p">{{ t('enum.platform.' + p) }}</option>
-            </select>
-          </FormField>
-
           <!-- Total Revenue -->
           <FormField :label="t('booking.totalRevenue')" :error="errors.total_revenue" required>
-            <input v-model.number="form.total_revenue" type="number" step="0.01" min="0" class="form-input" @blur="validate('total_revenue')" />
+            <input v-model.number="form.total_revenue" type="number" step="0.01" min="0" class="form-input"
+              @blur="validate('total_revenue')" @input="recalc" />
           </FormField>
+        </div>
 
-          <!-- Commission -->
-          <FormField :label="t('booking.commission')" :error="errors.commission" required>
-            <input v-model.number="form.commission" type="number" step="0.01" min="0" class="form-input" @blur="validate('commission')" />
+        <!-- Source Type Toggle -->
+        <div class="source-type-section">
+          <div class="source-type-label">{{ t('booking.sourceType') }}</div>
+          <div class="source-toggle">
+            <button type="button" class="toggle-btn" :class="{ active: form.source_type === 'platform' }"
+              @click="setSourceType('platform')">
+              {{ t('booking.sourcePlatform') }}
+            </button>
+            <button type="button" class="toggle-btn" :class="{ active: form.source_type === 'agent' }"
+              @click="setSourceType('agent')">
+              {{ t('booking.sourceAgent') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Platform fields -->
+        <div v-if="form.source_type === 'platform'" class="form-grid">
+          <FormField :label="t('booking.sourcePlatform')" :error="errors.platform_id">
+            <select v-model="form.platform_id" class="form-select" @change="recalc">
+              <option value="">--</option>
+              <option v-for="p in platforms" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </select>
           </FormField>
-
-          <!-- Net Income (read-only, edit mode) -->
-          <FormField v-if="isEdit" :label="t('booking.netIncome')">
-            <input :value="formatNumber(booking?.net_income)" class="form-input" disabled />
+          <FormField :label="t('booking.commission')">
+            <input :value="formatNumber(calcCommission)" class="form-input" disabled />
           </FormField>
+          <FormField :label="t('booking.tax')">
+            <input :value="formatNumber(calcTax)" class="form-input" disabled />
+          </FormField>
+          <FormField :label="t('booking.netIncome')">
+            <input :value="formatNumber(calcNetIncome)" class="form-input net-income" disabled />
+          </FormField>
+          <div class="calc-hint">{{ t('booking.netIncomeCalc') }}</div>
+        </div>
 
-          <!-- Created By (read-only, edit mode) -->
-          <FormField v-if="isEdit" :label="t('booking.createdBy')">
+        <!-- Agent fields -->
+        <div v-if="form.source_type === 'agent'" class="form-grid">
+          <FormField :label="t('booking.sourceAgent')" :error="errors.agent_id">
+            <select v-model="form.agent_id" class="form-select">
+              <option value="">--</option>
+              <option v-for="a in agents" :key="a.id" :value="a.id">{{ a.name }}</option>
+            </select>
+          </FormField>
+          <FormField :label="t('booking.agentFee')" :error="errors.agent_fee">
+            <input v-model.number="form.agent_fee" type="number" step="0.01" min="0" class="form-input"
+              @input="recalc" />
+          </FormField>
+          <FormField :label="t('booking.netIncome')">
+            <input :value="formatNumber(calcNetIncome)" class="form-input net-income" disabled />
+          </FormField>
+          <div class="calc-hint">{{ t('booking.netIncomeCalcAgent') }}</div>
+        </div>
+
+        <!-- Created By (edit mode) -->
+        <div class="form-grid" v-if="isEdit">
+          <FormField :label="t('booking.createdBy')">
             <input :value="booking?.created_by_name || booking?.created_by || '-'" class="form-input" disabled />
           </FormField>
         </div>
@@ -98,14 +136,10 @@ const router = useRouter();
 const bookingStore = useBookingStore();
 const toast = useToast();
 
-const platforms = [
-  'Airbnb', 'Agoda', 'Booking.com', 'Trip.com',
-  '途家', '小猪', '美团民宿', '飞猪',
-  'Expedia', 'VRBO', '直客', '其他',
-];
-
 const isEdit = computed(() => route.name === 'BookingDetail');
 const rooms = ref([]);
+const platforms = ref([]);
+const agents = ref([]);
 const booking = ref(null);
 const submitting = ref(false);
 
@@ -115,12 +149,39 @@ const form = reactive({
   check_in: '',
   check_out: '',
   rental_type: '',
-  platform_source: '',
+  source_type: 'platform',
+  platform_id: '',
+  agent_id: '',
+  agent_fee: 0,
   total_revenue: '',
-  commission: '',
 });
 
-const { errors, validateField, validateAll, clearErrors } = useValidation({
+// Auto-calc
+const selectedPlatform = computed(() => platforms.value.find(p => p.id === form.platform_id));
+const calcCommission = computed(() => {
+  if (!selectedPlatform.value || !form.total_revenue) return 0;
+  return Number(form.total_revenue) * (Number(selectedPlatform.value.commission_rate) / 100);
+});
+const calcTax = computed(() => {
+  if (!selectedPlatform.value || !form.total_revenue) return 0;
+  return Number(form.total_revenue) * (Number(selectedPlatform.value.tax_rate) / 100);
+});
+const calcNetIncome = computed(() => {
+  const rev = Number(form.total_revenue) || 0;
+  if (form.source_type === 'platform') return rev - calcCommission.value - calcTax.value;
+  return rev - (Number(form.agent_fee) || 0);
+});
+
+function recalc() { /* reactivity handles it */ }
+
+function setSourceType(type) {
+  form.source_type = type;
+  form.platform_id = '';
+  form.agent_id = '';
+  form.agent_fee = 0;
+}
+
+const { errors, validateField, validateAll } = useValidation({
   room_id: [requiredRule(t('validation.required'))],
   guest_name: [requiredRule(t('validation.required'))],
   check_in: [requiredRule(t('validation.required'))],
@@ -129,20 +190,10 @@ const { errors, validateField, validateAll, clearErrors } = useValidation({
     dateAfter(() => form.check_in, t('validation.checkOutAfterCheckIn')),
   ],
   rental_type: [requiredRule(t('validation.required'))],
-  platform_source: [requiredRule(t('validation.required'))],
-  total_revenue: [
-    requiredRule(t('validation.required')),
-    nonNegative(t('validation.nonNegative')),
-  ],
-  commission: [
-    requiredRule(t('validation.required')),
-    nonNegative(t('validation.nonNegative')),
-  ],
+  total_revenue: [requiredRule(t('validation.required')), nonNegative(t('validation.nonNegative'))],
 });
 
-function validate(field) {
-  validateField(field, form[field]);
-}
+function validate(field) { validateField(field, form[field]); }
 
 function formatNumber(val) {
   if (val == null) return '-';
@@ -151,7 +202,6 @@ function formatNumber(val) {
 
 async function handleSubmit() {
   if (!validateAll(form)) return;
-
   submitting.value = true;
   try {
     const payload = {
@@ -160,11 +210,14 @@ async function handleSubmit() {
       check_in: form.check_in,
       check_out: form.check_out,
       rental_type: form.rental_type,
-      platform_source: form.platform_source,
+      source_type: form.source_type,
+      platform_id: form.source_type === 'platform' && form.platform_id ? Number(form.platform_id) : null,
+      agent_id: form.source_type === 'agent' && form.agent_id ? Number(form.agent_id) : null,
+      agent_fee: form.source_type === 'agent' ? Number(form.agent_fee) || 0 : 0,
       total_revenue: Number(form.total_revenue),
-      commission: Number(form.commission),
+      commission: form.source_type === 'platform' ? calcCommission.value : 0,
+      tax: form.source_type === 'platform' ? calcTax.value : 0,
     };
-
     if (isEdit.value) {
       await bookingStore.updateBooking(route.params.id, payload);
       toast.success(t('common.save'));
@@ -174,8 +227,7 @@ async function handleSubmit() {
     }
     router.push('/bookings');
   } catch (err) {
-    const msg = err.response?.data?.message || t('error.unknown');
-    toast.error(msg);
+    toast.error(err.response?.data?.message || t('error.unknown'));
   } finally {
     submitting.value = false;
   }
@@ -185,9 +237,17 @@ async function loadRooms() {
   try {
     const { data } = await apiClient.get('/rooms');
     rooms.value = Array.isArray(data) ? data : (data.data || []);
-  } catch {
-    rooms.value = [];
-  }
+  } catch { rooms.value = []; }
+}
+
+async function loadPlatforms() {
+  try { platforms.value = (await apiClient.get('/platforms')).data; }
+  catch { platforms.value = []; }
+}
+
+async function loadAgents() {
+  try { agents.value = (await apiClient.get('/agents')).data; }
+  catch { agents.value = []; }
 }
 
 async function loadBooking() {
@@ -197,22 +257,21 @@ async function loadBooking() {
     booking.value = data;
     form.room_id = data.room_id;
     form.guest_name = data.guest_name;
-    form.check_in = data.check_in;
-    form.check_out = data.check_out;
+    form.check_in = data.check_in?.slice(0, 10) || data.check_in;
+    form.check_out = data.check_out?.slice(0, 10) || data.check_out;
     form.rental_type = data.rental_type;
-    form.platform_source = data.platform_source;
+    form.source_type = data.source_type || 'platform';
+    form.platform_id = data.platform_id || '';
+    form.agent_id = data.agent_id || '';
+    form.agent_fee = data.agent_fee || 0;
     form.total_revenue = data.total_revenue;
-    form.commission = data.commission;
   } catch (err) {
     toast.error(err.response?.data?.message || t('error.notFound'));
     router.push('/bookings');
   }
 }
 
-onMounted(() => {
-  loadRooms();
-  loadBooking();
-});
+onMounted(() => { loadRooms(); loadPlatforms(); loadAgents(); loadBooking(); });
 </script>
 
 <style scoped>
@@ -221,12 +280,49 @@ onMounted(() => {
   grid-template-columns: 1fr;
   gap: 0;
 }
-
 @media (min-width: 640px) {
-  .form-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 0 var(--spacing-lg);
-  }
+  .form-grid { grid-template-columns: 1fr 1fr; gap: 0 var(--spacing-lg); }
+}
+
+.source-type-section {
+  margin: 1rem 0 0.5rem;
+}
+.source-type-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  margin-bottom: 0.5rem;
+}
+.source-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border: 2px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--color-text-secondary, #6b7280);
+}
+.toggle-btn.active {
+  border-color: var(--color-primary, #2563eb);
+  background: var(--color-primary, #2563eb);
+  color: #fff;
+}
+
+.net-income { font-weight: 700; color: var(--color-primary, #2563eb); }
+
+.calc-hint {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin-bottom: 0.5rem;
 }
 
 .form-actions {
@@ -237,23 +333,10 @@ onMounted(() => {
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
 }
-
-.form-actions .btn {
-  width: 100%;
-}
-
+.form-actions .btn { width: 100%; }
 @media (min-width: 640px) {
-  .form-actions {
-    flex-direction: row;
-  }
-
-  .form-actions .btn {
-    width: auto;
-  }
+  .form-actions { flex-direction: row; }
+  .form-actions .btn { width: auto; }
 }
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

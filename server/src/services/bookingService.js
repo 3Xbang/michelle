@@ -68,7 +68,8 @@ async function checkDateConflict(roomId, checkIn, checkOut, excludeBookingId = n
 }
 
 const BOOKING_COLUMNS = `id, room_id, created_by, guest_name, check_in, check_out,
-  rental_type, platform_source, total_revenue, commission, net_income,
+  rental_type, platform_source, platform_id, agent_id, agent_fee, source_type,
+  total_revenue, commission, tax, net_income,
   external_order_id, raw_email_content, currency, booking_status, created_at, updated_at`;
 
 /**
@@ -83,28 +84,37 @@ export async function create(data, userId) {
     check_out,
     rental_type,
     platform_source,
+    source_type = null,
+    platform_id = null,
+    agent_id = null,
+    agent_fee = 0,
     total_revenue,
     commission = 0,
+    tax = 0,
     booking_status = 'pending',
     external_order_id = null,
     raw_email_content = null,
     currency = 'THB',
   } = data;
 
-  // Check date conflict
   await checkDateConflict(room_id, check_in, check_out);
 
-  // Auto-calculate net income
-  const net_income = calculateNetIncome(total_revenue, commission);
+  // net_income: platform = revenue - commission - tax; agent = revenue - agent_fee
+  const effectiveDeduction = source_type === 'agent'
+    ? Number(agent_fee)
+    : Number(commission) + Number(tax);
+  const net_income = calculateNetIncome(total_revenue, effectiveDeduction);
 
   const result = await pool.query(
     `INSERT INTO bookings (room_id, created_by, guest_name, check_in, check_out,
-      rental_type, platform_source, total_revenue, commission, net_income,
+      rental_type, platform_source, source_type, platform_id, agent_id, agent_fee,
+      total_revenue, commission, tax, net_income,
       external_order_id, raw_email_content, currency, booking_status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
      RETURNING ${BOOKING_COLUMNS}`,
     [room_id, userId, guest_name, check_in, check_out, rental_type, platform_source,
-     total_revenue, commission, net_income, external_order_id, raw_email_content,
+     source_type, platform_id, agent_id, agent_fee,
+     total_revenue, commission, tax, net_income, external_order_id, raw_email_content,
      currency, booking_status],
   );
   return result.rows[0];
@@ -123,12 +133,18 @@ export async function update(id, data) {
   const check_out = data.check_out !== undefined ? data.check_out : existing.check_out;
   const total_revenue = data.total_revenue !== undefined ? data.total_revenue : parseFloat(existing.total_revenue);
   const commission = data.commission !== undefined ? data.commission : parseFloat(existing.commission);
+  const tax = data.tax !== undefined ? data.tax : parseFloat(existing.tax || 0);
+  const source_type = data.source_type !== undefined ? data.source_type : existing.source_type;
+  const platform_id = data.platform_id !== undefined ? data.platform_id : existing.platform_id;
+  const agent_id = data.agent_id !== undefined ? data.agent_id : existing.agent_id;
+  const agent_fee = data.agent_fee !== undefined ? data.agent_fee : parseFloat(existing.agent_fee || 0);
 
-  // Re-run date conflict detection excluding self
   await checkDateConflict(room_id, check_in, check_out, id);
 
-  // Recalculate net income
-  const net_income = calculateNetIncome(total_revenue, commission);
+  const effectiveDeduction = source_type === 'agent'
+    ? Number(agent_fee)
+    : Number(commission) + Number(tax);
+  const net_income = calculateNetIncome(total_revenue, effectiveDeduction);
 
   const guest_name = data.guest_name !== undefined ? data.guest_name : existing.guest_name;
   const rental_type = data.rental_type !== undefined ? data.rental_type : existing.rental_type;
@@ -140,14 +156,16 @@ export async function update(id, data) {
 
   const result = await pool.query(
     `UPDATE bookings SET
-      room_id = $1, guest_name = $2, check_in = $3, check_out = $4,
-      rental_type = $5, platform_source = $6, total_revenue = $7, commission = $8,
-      net_income = $9, external_order_id = $10, raw_email_content = $11,
-      currency = $12, booking_status = $13, updated_at = NOW()
-     WHERE id = $14
+      room_id=$1, guest_name=$2, check_in=$3, check_out=$4,
+      rental_type=$5, platform_source=$6, source_type=$7, platform_id=$8,
+      agent_id=$9, agent_fee=$10, total_revenue=$11, commission=$12, tax=$13,
+      net_income=$14, external_order_id=$15, raw_email_content=$16,
+      currency=$17, booking_status=$18, updated_at=NOW()
+     WHERE id=$19
      RETURNING ${BOOKING_COLUMNS}`,
     [room_id, guest_name, check_in, check_out, rental_type, platform_source,
-     total_revenue, commission, net_income, external_order_id, raw_email_content,
+     source_type, platform_id, agent_id, agent_fee,
+     total_revenue, commission, tax, net_income, external_order_id, raw_email_content,
      currency, booking_status, id],
   );
 
