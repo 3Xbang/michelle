@@ -329,6 +329,12 @@
     "addContact": "添加联系方式",
     "contactAccount": "账号 / ID",
     "owner": "业主",
-    "template": "房型模板"
+    "template": "房型模板",
+    "photos": "房源照片",
+    "uploadPhoto": "上传照片",
+    "photoHint": "支持 JPG/PNG/WebP，最大 10MB，可上传多张",
+    "coverPhoto": "封面",
+    "deletePhoto": "删除照片",
+    "noPhotos": "暂无照片"
   }
 }

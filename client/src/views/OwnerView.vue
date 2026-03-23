@@ -46,6 +46,15 @@
           <div v-else-if="!templates[owner.id]?.length" class="empty-text">{{ t('common.noData') }}</div>
           <div v-else class="template-list">
             <div v-for="tpl in templates[owner.id]" :key="tpl.id" class="template-row">
+              <!-- Cover photo thumbnail -->
+              <div class="template-cover" @click="openPhotoManager(owner.id, tpl)">
+                <img v-if="tpl.photos && tpl.photos.length" :src="tpl.photos[0]" class="cover-img" />
+                <div v-else class="cover-placeholder">
+                  <span class="cover-icon">🖼</span>
+                  <span class="cover-add">{{ t('owner.uploadPhoto') }}</span>
+                </div>
+                <div class="cover-count" v-if="tpl.photos && tpl.photos.length > 1">+{{ tpl.photos.length - 1 }}</div>
+              </div>
               <div class="template-info">
                 <div class="template-name">{{ tpl.template_name }}</div>
                 <div class="template-project" v-if="tpl.project_name">
@@ -58,6 +67,7 @@
                 <div class="template-rooms">{{ tpl.room_count }} {{ t('owner.rooms') }}</div>
               </div>
               <div class="template-actions">
+                <button class="btn btn-sm btn-outline" @click="openPhotoManager(owner.id, tpl)">🖼 {{ t('owner.photos') }}</button>
                 <button class="btn btn-sm btn-primary" @click="syncPrices(tpl)" :disabled="tpl.room_count === 0">{{ t('owner.syncPrices') }}</button>
                 <button class="btn btn-sm btn-outline" @click="openAssignRooms(owner.id, tpl)">{{ t('owner.assignRooms') }}</button>
                 <button class="btn btn-sm btn-outline" @click="openTemplateForm(owner.id, tpl)">{{ t('common.edit') }}</button>
@@ -225,6 +235,48 @@
         </div>
       </div>
     </div>
+
+    <!-- Photo Manager Modal -->
+    <div v-if="showPhotoManager" class="modal-overlay" @click.self="showPhotoManager = false">
+      <div class="modal-content card modal-wide">
+        <h2 class="modal-title">{{ t('owner.photos') }} — {{ photoTemplate?.project_name || photoTemplate?.template_name }}</h2>
+        <div class="photo-hint">{{ t('owner.photoHint') }}</div>
+
+        <!-- Photo grid -->
+        <div class="photo-grid">
+          <div v-for="(url, idx) in photoList" :key="url" class="photo-item">
+            <img :src="url" class="photo-thumb" @click="previewPhoto(url)" />
+            <div class="photo-item-actions">
+              <span v-if="idx === 0" class="photo-cover-badge">{{ t('owner.coverPhoto') }}</span>
+              <button class="photo-delete-btn" @click="removePhoto(idx)" :disabled="uploadingPhoto">✕</button>
+            </div>
+            <div v-if="idx > 0" class="photo-move-btn" @click="setAsCover(idx)" title="设为封面">⬆ 封面</div>
+          </div>
+
+          <!-- Upload slot -->
+          <label class="photo-upload-slot" :class="{ uploading: uploadingPhoto }">
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple @change="handlePhotoUpload" :disabled="uploadingPhoto" style="display:none" />
+            <span v-if="uploadingPhoto" class="upload-spinner">⏳</span>
+            <span v-else class="upload-icon">+</span>
+            <span class="upload-label">{{ uploadingPhoto ? t('common.loading') : t('owner.uploadPhoto') }}</span>
+          </label>
+        </div>
+
+        <div v-if="photoList.length === 0" class="empty-text">{{ t('owner.noPhotos') }}</div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" @click="savePhotos" :disabled="savingPhotos">
+            {{ savingPhotos ? t('common.loading') : t('common.save') }}
+          </button>
+          <button class="btn btn-outline" @click="showPhotoManager = false">{{ t('common.cancel') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo Preview -->
+    <div v-if="previewUrl" class="photo-preview-overlay" @click="previewUrl = null">
+      <img :src="previewUrl" class="photo-preview-img" />
+    </div>
   </div>
 </template>
 
@@ -266,11 +318,80 @@ const templateForm = reactive({
   template_name: '', project_name: '', project_name_en: '', project_type: 'apartment',
   bedrooms: 1, bathrooms: 1, kitchens: 0,
   daily_rate: 0, monthly_rate: 0, yearly_rate: 0, notes: '',
-  room_numbers: []  // [{ name_cn, name_en }]
+  room_numbers: []
 });
 
 function addRoomNumber() { templateForm.room_numbers.push({ name_cn: '', name_en: '' }); }
 function removeRoomNumber(idx) { templateForm.room_numbers.splice(idx, 1); }
+
+// Photo manager
+const showPhotoManager = ref(false);
+const photoTemplate = ref(null);
+const photoOwnerId = ref(null);
+const photoList = ref([]);
+const uploadingPhoto = ref(false);
+const savingPhotos = ref(false);
+const previewUrl = ref(null);
+
+function openPhotoManager(ownerId, tpl) {
+  photoTemplate.value = tpl;
+  photoOwnerId.value = ownerId;
+  photoList.value = Array.isArray(tpl.photos) ? [...tpl.photos] : [];
+  showPhotoManager.value = true;
+}
+
+function previewPhoto(url) { previewUrl.value = url; }
+
+async function handlePhotoUpload(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  uploadingPhoto.value = true;
+  try {
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await apiClient.post('/upload/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      photoList.value.push(res.data.url);
+    }
+  } catch (err) {
+    toast.error(err.response?.data?.message || t('error.unknown'));
+  } finally {
+    uploadingPhoto.value = false;
+    e.target.value = '';
+  }
+}
+
+async function removePhoto(idx) {
+  const url = photoList.value[idx];
+  try {
+    await apiClient.delete('/upload/image', { data: { url } });
+  } catch { /* ignore delete errors */ }
+  photoList.value.splice(idx, 1);
+}
+
+function setAsCover(idx) {
+  const [photo] = photoList.value.splice(idx, 1);
+  photoList.value.unshift(photo);
+}
+
+async function savePhotos() {
+  savingPhotos.value = true;
+  try {
+    const res = await apiClient.put(`/owners/templates/${photoTemplate.value.id}/photos`, { photos: photoList.value });
+    toast.success(t('common.save'));
+    // Update local template data
+    const ownerId = photoOwnerId.value;
+    if (templates.value[ownerId]) {
+      const idx = templates.value[ownerId].findIndex(t => t.id === photoTemplate.value.id);
+      if (idx !== -1) templates.value[ownerId][idx].photos = res.data.photos;
+    }
+    showPhotoManager.value = false;
+  } catch (err) {
+    toast.error(err.response?.data?.message || t('error.unknown'));
+  } finally {
+    savingPhotos.value = false;
+  }
+}
 
 async function fetchOwners() {
   loading.value = true;
@@ -337,7 +458,6 @@ async function openTemplateForm(ownerId, tpl) {
       daily_rate: tpl.daily_rate, monthly_rate: tpl.monthly_rate, yearly_rate: tpl.yearly_rate,
       notes: tpl.notes || '', room_numbers: []
     });
-    // Load existing rooms for this template
     try {
       const rooms = (await apiClient.get(`/owners/templates/${tpl.id}/rooms`)).data;
       templateForm.room_numbers = rooms.map(r => ({ name_cn: r.room_name_cn, name_en: r.room_name_en }));
@@ -371,7 +491,6 @@ async function submitTemplate() {
       const res = (await apiClient.post(`/owners/${currentOwnerId.value}/templates`, payload)).data;
       tplId = res.id;
     }
-    // Sync room numbers
     const validRooms = templateForm.room_numbers.filter(r => r.name_cn.trim());
     if (validRooms.length > 0) {
       await apiClient.post(`/owners/templates/${tplId}/sync-rooms`, { room_numbers: validRooms });
@@ -466,10 +585,11 @@ onMounted(fetchOwners);
 .templates-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
 .templates-title { font-weight: 600; font-size: 0.9375rem; }
 .template-list { display: flex; flex-direction: column; gap: 0.75rem; }
-.template-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.75rem; background: var(--color-bg, #f9fafb); border-radius: 8px; gap: 0.5rem; flex-wrap: wrap; }
+.template-row { display: flex; align-items: flex-start; padding: 0.75rem; background: var(--color-bg, #f9fafb); border-radius: 8px; gap: 0.75rem; flex-wrap: wrap; }
 .template-name { font-weight: 600; margin-bottom: 0.25rem; }
 .template-specs, .template-prices { font-size: 0.8125rem; color: var(--color-text-secondary, #6b7280); margin-bottom: 0.25rem; }
 .template-rooms { font-size: 0.75rem; color: var(--color-primary, #2563eb); font-weight: 600; }
+.template-info { flex: 1; min-width: 160px; }
 .template-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; align-items: flex-start; }
 .template-project { font-size: 0.8125rem; color: var(--color-text-secondary, #6b7280); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
 .project-name-en { color: #9ca3af; }
@@ -477,6 +597,26 @@ onMounted(fetchOwners);
 .type-apartment { background: #dbeafe; color: #1d4ed8; }
 .type-homestay { background: #dcfce7; color: #166534; }
 .type-villa { background: #fef9c3; color: #854d0e; }
+
+/* Cover photo in template row */
+.template-cover {
+  width: 80px; height: 80px; border-radius: 8px; overflow: hidden;
+  flex-shrink: 0; cursor: pointer; position: relative;
+  border: 1.5px solid #e5e7eb;
+}
+.cover-img { width: 100%; height: 100%; object-fit: cover; }
+.cover-placeholder {
+  width: 100%; height: 100%; background: #f3f4f6;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;
+}
+.cover-icon { font-size: 1.5rem; }
+.cover-add { font-size: 0.625rem; color: #9ca3af; }
+.cover-count {
+  position: absolute; bottom: 4px; right: 4px;
+  background: rgba(0,0,0,0.55); color: #fff;
+  font-size: 0.625rem; font-weight: 700;
+  border-radius: 999px; padding: 0.1rem 0.375rem;
+}
 
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 0.75rem; }
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.75rem; }
@@ -500,7 +640,6 @@ onMounted(fetchOwners);
 .contact-remove { flex-shrink: 0; padding: 0.25rem 0.5rem; }
 .contact-chip { background: #f0fdf4; color: #166534; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.75rem; }
 
-/* Room numbers */
 .room-numbers-section { margin-top: 0.75rem; margin-bottom: 0.75rem; }
 .room-numbers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; }
 .room-numbers-label { font-size: 0.875rem; font-weight: 600; }
@@ -508,7 +647,6 @@ onMounted(fetchOwners);
 .room-number-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.375rem; }
 .room-number-index { min-width: 1.5rem; text-align: right; font-size: 0.8125rem; color: #9ca3af; }
 
-/* Assign rooms */
 .assign-hint { font-size: 0.8125rem; color: #6b7280; margin-bottom: 0.75rem; }
 .assign-list { display: flex; flex-direction: column; gap: 0.375rem; max-height: 320px; overflow-y: auto; margin-bottom: 0.75rem; }
 .assign-row { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.625rem; border-radius: 8px; cursor: pointer; }
@@ -518,4 +656,56 @@ onMounted(fetchOwners);
 .assign-room-en { font-size: 0.8125rem; color: #9ca3af; }
 .assign-room-rate { font-size: 0.8125rem; color: #2563eb; font-weight: 600; white-space: nowrap; }
 .assign-select-all { margin-bottom: 0.5rem; }
+
+/* Photo manager */
+.photo-hint { font-size: 0.8125rem; color: #6b7280; margin-bottom: 1rem; }
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.photo-item { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 4/3; }
+.photo-thumb { width: 100%; height: 100%; object-fit: cover; cursor: pointer; display: block; }
+.photo-item-actions {
+  position: absolute; top: 4px; right: 4px;
+  display: flex; gap: 0.25rem; align-items: center;
+}
+.photo-cover-badge {
+  background: #2563eb; color: #fff;
+  font-size: 0.625rem; font-weight: 700;
+  border-radius: 999px; padding: 0.1rem 0.375rem;
+}
+.photo-delete-btn {
+  background: rgba(0,0,0,0.55); color: #fff; border: none;
+  border-radius: 50%; width: 20px; height: 20px;
+  font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.photo-delete-btn:hover { background: #ef4444; }
+.photo-move-btn {
+  position: absolute; bottom: 4px; left: 4px;
+  background: rgba(0,0,0,0.55); color: #fff;
+  font-size: 0.625rem; border-radius: 4px; padding: 0.1rem 0.375rem;
+  cursor: pointer;
+}
+.photo-move-btn:hover { background: #2563eb; }
+.photo-upload-slot {
+  border: 2px dashed #d1d5db; border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  aspect-ratio: 4/3; cursor: pointer; gap: 0.375rem;
+  transition: border-color 0.15s;
+}
+.photo-upload-slot:hover { border-color: #2563eb; }
+.photo-upload-slot.uploading { opacity: 0.6; cursor: not-allowed; }
+.upload-icon { font-size: 1.75rem; color: #9ca3af; }
+.upload-spinner { font-size: 1.5rem; }
+.upload-label { font-size: 0.75rem; color: #9ca3af; }
+
+/* Full-screen preview */
+.photo-preview-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000; cursor: zoom-out;
+}
+.photo-preview-img { max-width: 90vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 </style>

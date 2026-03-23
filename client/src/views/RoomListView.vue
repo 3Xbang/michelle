@@ -74,6 +74,10 @@
       <div class="card-grid card-grid-tpl">
         <div v-for="tpl in selectedType.templates" :key="tpl.id"
              class="tile tile-template" :class="'tpl-' + selectedType.type" @click="selectTemplate(tpl)">
+          <!-- Cover photo -->
+          <div v-if="tpl.photos && tpl.photos.length" class="tpl-cover">
+            <img :src="tpl.photos[0]" class="tpl-cover-img" />
+          </div>
           <div class="tpl-header">
             <span class="tpl-type-badge" :class="'badge-' + selectedType.type">{{ t('enum.roomType.' + selectedType.type) }}</span>
             <span class="tpl-room-count">{{ tpl.rooms.length }} 套</span>
@@ -336,6 +340,8 @@ onMounted(loadAll);
   padding: 0.1rem 0.5rem;
 }
 .tpl-proj-name { font-weight: 700; font-size: 0.9375rem; color: #111827; line-height: 1.3; margin-bottom: 0.25rem; }
+.tpl-cover { width: 100%; height: 100px; margin: -1.25rem -1.25rem 0.75rem; overflow: hidden; border-radius: 14px 14px 0 0; }
+.tpl-cover-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .tpl-proj-en { font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.5rem; }
 .tpl-specs {
   display: flex; gap: 0.5rem; flex-wrap: wrap;

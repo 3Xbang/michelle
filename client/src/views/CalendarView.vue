@@ -33,6 +33,7 @@
       :booking="selectedBooking"
       :visible="!!selectedBooking"
       :position="popoverPosition"
+      :room-photos="selectedBookingPhotos"
       @close="selectedBooking = null"
     />
   </div>
@@ -57,9 +58,17 @@ const month = ref(now.getMonth() + 1);
 const rooms = ref([]);
 const bookings = ref([]);
 const loading = ref(false);
+const templatePhotos = ref({});  // templateId -> photos[]
 
 const selectedBooking = ref(null);
 const popoverPosition = ref({ x: 0, y: 0 });
+
+const selectedBookingPhotos = computed(() => {
+  if (!selectedBooking.value) return [];
+  const room = rooms.value.find(r => r.id === selectedBooking.value.room_id);
+  if (!room || !room.template_id) return [];
+  return templatePhotos.value[room.template_id] || [];
+});
 
 const monthLabel = computed(() => {
   const date = new Date(year.value, month.value - 1);
@@ -92,6 +101,16 @@ async function fetchCalendarData() {
     });
     rooms.value = data.rooms || [];
     bookings.value = data.bookings || [];
+    // Load template photos
+    const templateIds = [...new Set(rooms.value.filter(r => r.template_id).map(r => r.template_id))];
+    for (const tid of templateIds) {
+      if (!templatePhotos.value[tid]) {
+        try {
+          const res = await apiClient.get('/owners/templates/' + tid + '/photos');
+          templatePhotos.value[tid] = res.data.photos || [];
+        } catch { templatePhotos.value[tid] = []; }
+      }
+    }
   } catch (err) {
     const msg = err.response?.data?.message || t('error.unknown');
     toast.error(msg);

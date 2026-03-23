@@ -64,4 +64,17 @@ router.post('/templates/:tid/assign-rooms', async (req, res, next) => {
   try { res.json(await ownerService.assignRoomsToTemplate(req.params.tid, req.body.room_ids || [])); } catch (e) { next(e); }
 });
 
+// Update template photos
+router.put('/templates/:tid/photos', async (req, res, next) => {
+  try { res.json(await ownerService.updateTemplatePhotos(req.params.tid, req.body.photos || [])); } catch (e) { next(e); }
+});
+
+// Get template photos
+router.get('/templates/:tid/photos', async (req, res, next) => {
+  try {
+    const tpl = await ownerService.getTemplateById(req.params.tid);
+    res.json({ photos: tpl.photos || [] });
+  } catch (e) { next(e); }
+});
+
 export default router;

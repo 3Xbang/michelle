@@ -327,6 +327,12 @@
     "addContact": "Add Contact",
     "contactAccount": "Account / ID",
     "owner": "Owner",
-    "template": "Room Template"
+    "template": "Room Template",
+    "photos": "Property Photos",
+    "uploadPhoto": "Upload Photo",
+    "photoHint": "JPG/PNG/WebP, max 10MB each",
+    "coverPhoto": "Cover",
+    "deletePhoto": "Delete Photo",
+    "noPhotos": "No photos yet"
   }
 }

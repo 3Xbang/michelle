@@ -58,13 +58,13 @@ export async function remove(id) {
 }
 
 // --- Templates ---
-const TPL_COLS = 'id, owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes, created_at, updated_at';
+const TPL_COLS = 'id, owner_id, template_name, project_name, project_name_en, project_type, bedrooms, bathrooms, kitchens, daily_rate, monthly_rate, yearly_rate, notes, photos, created_at, updated_at';
 
 export async function getTemplatesByOwner(ownerId) {
   const result = await pool.query(
     `SELECT t.id, t.owner_id, t.template_name, t.project_name, t.project_name_en, t.project_type,
             t.bedrooms, t.bathrooms, t.kitchens,
-            t.daily_rate, t.monthly_rate, t.yearly_rate, t.notes, t.created_at, t.updated_at,
+            t.daily_rate, t.monthly_rate, t.yearly_rate, t.notes, t.photos, t.created_at, t.updated_at,
             COUNT(r.id)::int AS room_count
      FROM room_templates t
      LEFT JOIN rooms r ON r.template_id = t.id
@@ -193,4 +193,13 @@ export async function assignRoomsToTemplate(templateId, roomIds) {
     [templateId, tpl.project_type || 'apartment'].concat(roomIds)
   );
   return { updated: result.rowCount };
+}
+
+export async function updateTemplatePhotos(templateId, photos) {
+  const result = await pool.query(
+    'UPDATE room_templates SET photos = $1, updated_at = NOW() WHERE id = $2 RETURNING ' + TPL_COLS,
+    [JSON.stringify(photos), templateId]
+  );
+  if (!result.rows.length) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Template not found');
+  return result.rows[0];
 }

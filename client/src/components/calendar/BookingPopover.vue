@@ -17,6 +17,11 @@
             <button class="popover-close" @click="$emit('close')">&times;</button>
           </div>
           <div class="popover-body">
+            <!-- Room cover photo -->
+            <div v-if="roomPhotos && roomPhotos.length" class="popover-photo">
+              <img :src="roomPhotos[0]" class="popover-cover-img" />
+              <span v-if="roomPhotos.length > 1" class="popover-photo-count">+{{ roomPhotos.length - 1 }}</span>
+            </div>
             <div class="popover-row">
               <span class="popover-label">{{ t('calendar.guest') }}</span>
               <span class="popover-value">{{ booking.guest_name }}</span>
@@ -73,6 +78,7 @@ const props = defineProps({
   booking: { type: Object, required: true },
   visible: { type: Boolean, default: false },
   position: { type: Object, default: () => ({ x: 0, y: 0 }) },
+  roomPhotos: { type: Array, default: () => [] },
 });
 
 defineEmits(['close']);
@@ -152,6 +158,19 @@ const popoverStyle = computed(() => ({
 
 .popover-body {
   padding: 0.75rem 1rem;
+}
+
+/* Room cover photo in popover */
+.popover-photo {
+  position: relative; margin-bottom: 0.75rem;
+  border-radius: 6px; overflow: hidden; height: 100px;
+}
+.popover-cover-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.popover-photo-count {
+  position: absolute; bottom: 4px; right: 4px;
+  background: rgba(0,0,0,0.55); color: #fff;
+  font-size: 0.625rem; font-weight: 700;
+  border-radius: 999px; padding: 0.1rem 0.375rem;
 }
 
 .popover-row {

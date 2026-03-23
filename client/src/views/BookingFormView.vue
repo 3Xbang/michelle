@@ -7,13 +7,21 @@
         <div class="form-grid">
           <!-- Room -->
           <FormField :label="t('booking.room')" :error="errors.room_id" required>
-            <select v-model="form.room_id" class="form-select" @blur="validate('room_id')">
+            <select v-model="form.room_id" class="form-select" @blur="validate('room_id')" @change="onRoomChange">
               <option value="">--</option>
               <option v-for="room in rooms" :key="room.id" :value="room.id">
                 {{ room.room_name_cn }} / {{ room.room_name_en }}
               </option>
             </select>
           </FormField>
+
+          <!-- Room photo preview -->
+          <div v-if="selectedRoomPhotos.length" class="room-photo-preview">
+            <div class="room-photo-scroll">
+              <img v-for="url in selectedRoomPhotos" :key="url" :src="url" class="room-photo-thumb" @click="previewPhoto(url)" />
+            </div>
+            <div class="room-photo-count">{{ selectedRoomPhotos.length }} 张照片</div>
+          </div>
 
           <!-- Guest Name -->
           <FormField :label="t('booking.guestName')" :error="errors.guest_name" required>
@@ -117,6 +125,13 @@
       </form>
     </div>
   </div>
+
+  <!-- Photo preview overlay -->
+  <Teleport to="body">
+    <div v-if="previewUrl" class="photo-preview-overlay" @click="previewUrl = null">
+      <img :src="previewUrl" class="photo-preview-img" />
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -142,6 +157,19 @@ const platforms = ref([]);
 const agents = ref([]);
 const booking = ref(null);
 const submitting = ref(false);
+
+// Room photos
+const roomTemplatePhotos = ref({});  // templateId -> photos[]
+const previewUrl = ref(null);
+const selectedRoomPhotos = computed(() => {
+  if (!form.room_id) return [];
+  const room = rooms.value.find(r => r.id === Number(form.room_id) || r.id === form.room_id);
+  if (!room || !room.template_id) return [];
+  return roomTemplatePhotos.value[room.template_id] || [];
+});
+
+function previewPhoto(url) { previewUrl.value = url; }
+function onRoomChange() { /* photos auto-computed */ }
 
 const form = reactive({
   room_id: '',
@@ -237,6 +265,14 @@ async function loadRooms() {
   try {
     const { data } = await apiClient.get('/rooms');
     rooms.value = Array.isArray(data) ? data : (data.data || []);
+    // Load template photos for rooms that have template_id
+    const templateIds = [...new Set(rooms.value.filter(r => r.template_id).map(r => r.template_id))];
+    for (const tid of templateIds) {
+      try {
+        const tpl = (await apiClient.get('/owners/templates/' + tid + '/photos')).data;
+        roomTemplatePhotos.value[tid] = tpl.photos || [];
+      } catch { roomTemplatePhotos.value[tid] = []; }
+    }
   } catch { rooms.value = []; }
 }
 
@@ -339,4 +375,27 @@ onMounted(() => { loadRooms(); loadPlatforms(); loadAgents(); loadBooking(); });
   .form-actions .btn { width: auto; }
 }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Room photo preview */
+.room-photo-preview {
+  grid-column: 1 / -1;
+  margin-bottom: 0.5rem;
+}
+.room-photo-scroll {
+  display: flex; gap: 0.5rem; overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+.room-photo-thumb {
+  width: 80px; height: 60px; object-fit: cover;
+  border-radius: 6px; flex-shrink: 0; cursor: zoom-in;
+  border: 1.5px solid #e5e7eb;
+}
+.room-photo-count { font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
+
+.photo-preview-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000; cursor: zoom-out;
+}
+.photo-preview-img { max-width: 90vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 </style>
