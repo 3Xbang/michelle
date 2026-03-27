@@ -4,9 +4,12 @@
       <h2 class="sidebar-logo">Villa PMS</h2>
     </div>
     <nav class="sidebar-nav">
-      <router-link v-for="item in visibleItems" :key="item.to" :to="item.to" class="nav-item">
-        {{ t(item.label) }}
-      </router-link>
+      <template v-for="item in visibleItems" :key="item.to">
+        <div v-if="item.sectionHeader" class="nav-section-header">{{ item.sectionHeader }}</div>
+        <router-link v-else :to="item.to" class="nav-item">
+          {{ t(item.label) }}
+        </router-link>
+      </template>
     </nav>
   </aside>
 </template>
@@ -29,11 +32,33 @@ const allItems = [
   { to: '/reports', label: 'nav.reports', admin: true },
   { to: '/config', label: 'nav.config', admin: true },
   { to: '/users', label: 'nav.users', admin: true },
+  // Sales CRM
+  { to: '/sales/properties', label: 'nav.salesProperties' },
+  { to: '/sales/customers', label: 'nav.salesCustomers' },
+  { to: '/sales/intents', label: 'nav.salesIntents' },
+  { to: '/sales/reminders', label: 'nav.salesReminders' },
+  { to: '/sales/reports', label: 'nav.salesReports' },
+  // Miraa CMS
+  { to: '/miraa/properties', label: 'nav.miraaProperties', admin: true, section: 'miraa' },
+  { to: '/miraa/banners', label: 'nav.miraaBanners', admin: true, section: 'miraa' },
+  { to: '/miraa/settings', label: 'nav.miraaSettings', admin: true, section: 'miraa' },
 ];
 
-const visibleItems = computed(() =>
-  allItems.filter((item) => !item.admin || authStore.isAdmin)
-);
+const visibleItems = computed(() => {
+  const items = [];
+  let lastSection = null;
+  for (const item of allItems) {
+    if (!item.admin || authStore.isAdmin) {
+      if (item.section && item.section !== lastSection) {
+        lastSection = item.section;
+        const headers = { miraa: '── Miraa 网站 ──' };
+        items.push({ sectionHeader: headers[item.section] });
+      }
+      items.push(item);
+    }
+  }
+  return items;
+});
 </script>
 
 <style scoped>
@@ -72,6 +97,14 @@ const visibleItems = computed(() =>
 .nav-item.router-link-active {
   background: rgba(255, 255, 255, 0.1);
   color: var(--color-nav-active);
+}
+
+.nav-section-header {
+  padding: 0.75rem 1.25rem 0.25rem;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* Fallback: hide on mobile (AppLayout already uses v-if="isDesktop") */

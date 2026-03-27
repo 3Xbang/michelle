@@ -35,7 +35,7 @@
     "calendar": "房态日历",
     "bookings": "订单管理",
     "tickets": "工单管理",
-    "rooms": "房源管理",
+    "rooms": "出租房源",
     "channel": "平台与中介",
     "owners": "业主管理",
     "reports": "财务报表",
@@ -43,7 +43,15 @@
     "users": "用户管理",
     "profile": "个人中心",
     "more": "更多",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "salesProperties": "预售房源",
+    "salesCustomers": "客户档案",
+    "salesIntents": "购买意向",
+    "salesReminders": "跟进提醒",
+    "salesReports": "销售业绩",
+    "miraaProperties": "房源管理",
+    "miraaBanners": "轮播图",
+    "miraaSettings": "联系方式"
   },
   "auth": {
     "login": "登录",
@@ -268,6 +276,172 @@
     "title": "404",
     "message": "页面不存在",
     "backHome": "返回首页"
+  },
+  "sales": {
+    "properties": {
+      "title": "预售房源",
+      "create": "新增房源",
+      "edit": "编辑房源",
+      "allStatus": "全部状态",
+      "allTypes": "全部类型",
+      "noData": "暂无房源",
+      "status": {
+        "available": "可售",
+        "reserved": "已预订",
+        "sold": "已售"
+      },
+      "type": {
+        "own": "自有",
+        "external": "外来"
+      },
+      "fields": {
+        "name": "名称",
+        "unitType": "户型",
+        "area": "面积（㎡）",
+        "price": "售价（元）",
+        "floor": "楼层",
+        "orientation": "朝向",
+        "propertyType": "类型",
+        "status": "状态",
+        "ownerName": "房主姓名",
+        "ownerContact": "房主联系方式",
+        "notes": "备注"
+      },
+      "photos": "照片",
+      "uploadPhoto": "上传照片",
+      "setCover": "设为封面",
+      "tabs": {
+        "viewings": "看房记录",
+        "intents": "意向客户",
+        "ads": "广告素材"
+      }
+    },
+    "customers": {
+      "title": "客户档案",
+      "create": "新增客户",
+      "edit": "编辑客户",
+      "pending": "待分配",
+      "pendingTitle": "待分配客户",
+      "searchPlaceholder": "搜索姓名/手机号",
+      "allSalespersons": "全部销售员",
+      "allSources": "全部来源",
+      "noData": "暂无客户",
+      "salesperson": "销售",
+      "assign": "分配",
+      "assignTo": "分配给",
+      "source": {
+        "walk_in": "自然到访",
+        "referral": "转介绍",
+        "online_ad": "网络广告",
+        "agent": "中介",
+        "web_form": "网络表单",
+        "other": "其他"
+      },
+      "fields": {
+        "name": "姓名",
+        "phone": "手机号",
+        "wechat": "微信号",
+        "budgetMin": "最低预算",
+        "budgetMax": "最高预算",
+        "preferences": "需求偏好",
+        "leadSource": "客户来源",
+        "salesperson": "负责销售员",
+        "notes": "备注"
+      },
+      "tabs": {
+        "viewings": "看房记录",
+        "intents": "购买意向"
+      }
+    },
+    "intents": {
+      "title": "购买意向",
+      "create": "新增意向",
+      "noData": "暂无意向",
+      "allLevels": "全部热度",
+      "level": {
+        "cold": "冷",
+        "warm": "温",
+        "hot": "热",
+        "signed": "签约"
+      },
+      "updateLevel": "更新热度",
+      "followUps": "跟进记录",
+      "addFollowUp": "添加跟进",
+      "noFollowUps": "暂无跟进记录",
+      "followUpContent": "跟进内容",
+      "lastFollowUp": "最后跟进"
+    },
+    "viewingRecords": {
+      "title": "看房记录",
+      "create": "新增看房记录",
+      "noData": "暂无看房记录",
+      "fields": {
+        "customer": "客户",
+        "property": "房源",
+        "viewedAt": "看房时间",
+        "salesperson": "带看销售员",
+        "notes": "备注"
+      }
+    },
+    "reminders": {
+      "title": "跟进提醒",
+      "noData": "暂无待跟进客户",
+      "daysAgo": "天前",
+      "lastFollowUp": "最后跟进"
+    },
+    "reports": {
+      "title": "销售业绩",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "salesperson": "销售员",
+      "viewingCount": "带看数",
+      "intentCount": "意向数",
+      "signedCount": "签约数",
+      "total": "合计",
+      "noData": "暂无数据"
+    },
+    "adMaterials": {
+      "title": "广告素材",
+      "create": "新增素材",
+      "edit": "编辑素材",
+      "preview": "预览",
+      "noData": "暂无广告素材",
+      "copyText": "复制文案",
+      "copied": "已复制 ✓",
+      "downloadZip": "批量下载图片",
+      "noPhotos": "暂无照片",
+      "status": {
+        "draft": "草稿",
+        "published": "已发布",
+        "paused": "已暂停"
+      },
+      "fields": {
+        "title": "标题",
+        "description": "描述文案",
+        "tags": "标签/卖点",
+        "photos": "选用照片",
+        "status": "状态"
+      }
+    },
+    "inquiry": {
+      "title": "房源咨询",
+      "subtitle": "填写意向信息",
+      "submit": "提交意向",
+      "submitting": "提交中...",
+      "success": "提交成功！我们将尽快与您联系。",
+      "rateLimited": "提交过于频繁，请稍后再试",
+      "failed": "提交失败，请稍后重试",
+      "fields": {
+        "name": "姓名",
+        "phone": "手机号",
+        "wechat": "微信号",
+        "budgetRange": "预算范围（元）",
+        "budgetMin": "最低",
+        "budgetMax": "最高",
+        "interestedProperties": "感兴趣的房源",
+        "notes": "备注"
+      }
+    }
   },
   "channel": {
     "title": "平台与中介管理",

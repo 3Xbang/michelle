@@ -30,14 +30,14 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 // POST /upload/image — upload single image, returns { url }
-router.post('/image', authenticate, authorize('Admin'), upload.single('file'), (req, res) => {
+router.post('/image', authenticate, authorize('Admin', 'Staff'), upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   const url = '/mira/uploads/' + req.file.filename;
   res.json({ url });
 });
 
 // DELETE /upload/image — delete image by url
-router.delete('/image', authenticate, authorize('Admin'), (req, res) => {
+router.delete('/image', authenticate, authorize('Admin', 'Staff'), (req, res) => {
   const { url } = req.body;
   if (!url || (!url.startsWith('/uploads/') && !url.startsWith('/mira/uploads/'))) return res.status(400).json({ message: 'Invalid url' });
   const filename = path.basename(url);

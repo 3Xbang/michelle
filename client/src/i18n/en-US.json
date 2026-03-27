@@ -33,7 +33,7 @@
     "calendar": "Calendar",
     "bookings": "Bookings",
     "tickets": "Tickets",
-    "rooms": "Rooms",
+    "rooms": "Rental Rooms",
     "channel": "Platforms & Agents",
     "owners": "Owners",
     "reports": "Reports",
@@ -41,7 +41,15 @@
     "users": "Users",
     "profile": "Profile",
     "more": "More",
-    "logout": "Logout"
+    "logout": "Logout",
+    "salesProperties": "Sales Properties",
+    "salesCustomers": "Customers",
+    "salesIntents": "Purchase Intents",
+    "salesReminders": "Follow-up Reminders",
+    "salesReports": "Sales Reports",
+    "miraaProperties": "Properties",
+    "miraaBanners": "Banners",
+    "miraaSettings": "Contact Settings"
   },
   "auth": {
     "login": "Login",
@@ -266,6 +274,172 @@
     "title": "404",
     "message": "Page not found",
     "backHome": "Back to Home"
+  },
+  "sales": {
+    "properties": {
+      "title": "Sales Properties",
+      "create": "Add Property",
+      "edit": "Edit Property",
+      "allStatus": "All Status",
+      "allTypes": "All Types",
+      "noData": "No properties",
+      "status": {
+        "available": "Available",
+        "reserved": "Reserved",
+        "sold": "Sold"
+      },
+      "type": {
+        "own": "Own",
+        "external": "External"
+      },
+      "fields": {
+        "name": "Name",
+        "unitType": "Unit Type",
+        "area": "Area (㎡)",
+        "price": "Price",
+        "floor": "Floor",
+        "orientation": "Orientation",
+        "propertyType": "Type",
+        "status": "Status",
+        "ownerName": "Owner Name",
+        "ownerContact": "Owner Contact",
+        "notes": "Notes"
+      },
+      "photos": "Photos",
+      "uploadPhoto": "Upload Photo",
+      "setCover": "Set as Cover",
+      "tabs": {
+        "viewings": "Viewings",
+        "intents": "Intents",
+        "ads": "Ad Materials"
+      }
+    },
+    "customers": {
+      "title": "Customers",
+      "create": "Add Customer",
+      "edit": "Edit Customer",
+      "pending": "Pending",
+      "pendingTitle": "Pending Customers",
+      "searchPlaceholder": "Search name/phone",
+      "allSalespersons": "All Salespersons",
+      "allSources": "All Sources",
+      "noData": "No customers",
+      "salesperson": "Sales",
+      "assign": "Assign",
+      "assignTo": "Assign to",
+      "source": {
+        "walk_in": "Walk-in",
+        "referral": "Referral",
+        "online_ad": "Online Ad",
+        "agent": "Agent",
+        "web_form": "Web Form",
+        "other": "Other"
+      },
+      "fields": {
+        "name": "Name",
+        "phone": "Phone",
+        "wechat": "WeChat",
+        "budgetMin": "Min Budget",
+        "budgetMax": "Max Budget",
+        "preferences": "Preferences",
+        "leadSource": "Lead Source",
+        "salesperson": "Salesperson",
+        "notes": "Notes"
+      },
+      "tabs": {
+        "viewings": "Viewings",
+        "intents": "Intents"
+      }
+    },
+    "intents": {
+      "title": "Purchase Intents",
+      "create": "Add Intent",
+      "noData": "No intents",
+      "allLevels": "All Levels",
+      "level": {
+        "cold": "Cold",
+        "warm": "Warm",
+        "hot": "Hot",
+        "signed": "Signed"
+      },
+      "updateLevel": "Update Level",
+      "followUps": "Follow-ups",
+      "addFollowUp": "Add Follow-up",
+      "noFollowUps": "No follow-ups",
+      "followUpContent": "Content",
+      "lastFollowUp": "Last Follow-up"
+    },
+    "viewingRecords": {
+      "title": "Viewing Records",
+      "create": "Add Viewing",
+      "noData": "No viewings",
+      "fields": {
+        "customer": "Customer",
+        "property": "Property",
+        "viewedAt": "Viewed At",
+        "salesperson": "Salesperson",
+        "notes": "Notes"
+      }
+    },
+    "reminders": {
+      "title": "Follow-up Reminders",
+      "noData": "No pending follow-ups",
+      "daysAgo": "days ago",
+      "lastFollowUp": "Last Follow-up"
+    },
+    "reports": {
+      "title": "Sales Reports",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "salesperson": "Salesperson",
+      "viewingCount": "Viewings",
+      "intentCount": "Intents",
+      "signedCount": "Signed",
+      "total": "Total",
+      "noData": "No data"
+    },
+    "adMaterials": {
+      "title": "Ad Materials",
+      "create": "Add Material",
+      "edit": "Edit Material",
+      "preview": "Preview",
+      "noData": "No ad materials",
+      "copyText": "Copy Text",
+      "copied": "Copied ✓",
+      "downloadZip": "Download Images",
+      "noPhotos": "No photos",
+      "status": {
+        "draft": "Draft",
+        "published": "Published",
+        "paused": "Paused"
+      },
+      "fields": {
+        "title": "Title",
+        "description": "Description",
+        "tags": "Tags",
+        "photos": "Photos",
+        "status": "Status"
+      }
+    },
+    "inquiry": {
+      "title": "Property Inquiry",
+      "subtitle": "Submit Your Interest",
+      "submit": "Submit",
+      "submitting": "Submitting...",
+      "success": "Submitted! We will contact you soon.",
+      "rateLimited": "Too many submissions, please try again later",
+      "failed": "Submission failed, please try again",
+      "fields": {
+        "name": "Name",
+        "phone": "Phone",
+        "wechat": "WeChat",
+        "budgetRange": "Budget Range",
+        "budgetMin": "Min",
+        "budgetMax": "Max",
+        "interestedProperties": "Interested Properties",
+        "notes": "Notes"
+      }
+    }
   },
   "channel": {
     "title": "Platforms & Agents",
